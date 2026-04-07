@@ -10,11 +10,17 @@
     "postinstall": "nuxt prepare"
   },
   "dependencies": {
+    "@nuxt/icon": "2.2.1",
+    "@pinia/nuxt": "^0.11.3",
     "@tailwindcss/vite": "^4.2.2",
     "gsap": "^3.14.2",
     "nuxt": "^4.4.2",
+    "pinia": "^3.0.4",
     "tailwindcss": "^4.2.2",
     "vue": "^3.5.31",
     "vue-router": "^5.0.4"
+  },
+  "devDependencies": {
+    "@iconify-json/uil": "^1.2.3"
   }
 }

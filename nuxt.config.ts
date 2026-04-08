@@ -1,5 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 
+const proxyTarget = process.env.NUXT_PROXY_TARGET!;
+
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
   compatibilityDate: "2025-07-15",
@@ -14,8 +16,8 @@ export default defineNuxtConfig({
     head: {
       script: [
         {
-          src: 'https://app.sandbox.midtrans.com/snap/snap.js',
-          'data-client-key': 'SB-Mid-client-XXXXX', // Replace with real client key if needed
+          src: "https://app.sandbox.midtrans.com/snap/snap.js",
+          "data-client-key": process.env.MIDTRANS_CLIENT_KEY || "",
         },
       ],
     },
@@ -28,12 +30,13 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: "/api",
+      midtransClientKey: process.env.MIDTRANS_CLIENT_KEY || "",
     },
   },
   routeRules: {
-    "/api/_nuxt_icon/**": { cache: false }, // Bypass proxy for local icon API
+    "/api/_nuxt_icon/**": { cache: false },
     "/api/**": {
-      proxy: "http://localhost/api/**",
+      proxy: `${proxyTarget}/api/**`,
     },
   },
   icon: {

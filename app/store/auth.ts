@@ -3,12 +3,19 @@ import type { User } from '~/types';
 
 export const useAuthStore = defineStore('auth', {
   state: () => {
-    const token = useCookie<string | null>('token', {
+    const cookieOptions = {
       maxAge: 60 * 60 * 24 * 7, // 7 days
-    });
+      path: '/',
+      sameSite: 'strict' as const,
+      secure: true,
+    };
+
+    const tokenCookie = useCookie<string | null>('token', cookieOptions);
+    const userCookie = useCookie<User | null>('user', cookieOptions);
+    
     return {
-      user: null as User | null,
-      token: token.value,
+      user: userCookie.value || null,
+      token: tokenCookie.value || null,
     };
   },
   getters: {
@@ -16,18 +23,39 @@ export const useAuthStore = defineStore('auth', {
   },
   actions: {
     setAuth(user: User, token: string) {
-      const tokenCookie = useCookie<string | null>('token', {
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      // Configuration for persistence
+      const cookieOptions = {
+        maxAge: 60 * 60 * 24 * 7, // 7 days
+        path: '/',
+        sameSite: 'strict' as const,
+        secure: true,
+      };
+
+      const tokenCookie = useCookie<string | null>('token', cookieOptions);
+      const userCookie = useCookie<User | null>('user', cookieOptions);
+      
       this.user = user;
       this.token = token;
+      
       tokenCookie.value = token;
+      userCookie.value = user;
     },
     logout() {
-      const tokenCookie = useCookie<string | null>('token');
+      // Must use same options to clear correctly
+      const cookieOptions = {
+        path: '/',
+        sameSite: 'strict' as const,
+        secure: true,
+      };
+
+      const tokenCookie = useCookie<string | null>('token', cookieOptions);
+      const userCookie = useCookie<User | null>('user', cookieOptions);
+      
       this.user = null;
       this.token = null;
+      
       tokenCookie.value = null;
+      userCookie.value = null;
     },
   },
 });

@@ -1,0 +1,35 @@
+# Version control
+.git
+.gitignore
+
+# IDE & Editor configs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Build artifacts (will be generated inside container)
+.nuxt/
+.output/
+dist/
+
+# Dependencies (will be installed inside container)
+node_modules/
+
+# Environment files (injected via docker-compose)
+.env
+.env.*
+
+# Docker files
+Dockerfile
+docker-compose.yml
+
+# Documentation
+README.md
+LICENSE
+apispec.yaml
+
+# Temporary & Logs
+*.log
+/tmp/
+.gemini/

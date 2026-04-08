@@ -15,38 +15,12 @@ export const useApi = () => {
   const authStore = useAuthStore();
   const config = useRuntimeConfig();
   const baseUrl = config.public.apiBase;
-  const csrfToken = useState<string | null>('csrf_token', () => null);
-
-  const getCsrfToken = async () => {
-    try {
-      const response = await $fetch<{ csrf_token: string }>('/csrf-token', { 
-        baseURL: baseUrl,
-        credentials: 'include' 
-      });
-      csrfToken.value = response.csrf_token;
-      return response.csrf_token;
-    } catch (err) {
-      console.error('Failed to fetch CSRF token', err);
-      return null;
-    }
-  };
 
   const fetchWithSecurity = async <T>(url: string, options: any = {}) => {
-    const method = (options.method || 'GET').toUpperCase();
     const headers: Record<string, string> = { ...options.headers };
     
     if (authStore.token) {
       headers['Authorization'] = `Bearer ${authStore.token}`;
-    }
-
-    // Add CSRF token for state-changing requests
-    if (['POST', 'PATCH', 'PUT', 'DELETE'].includes(method)) {
-      if (!csrfToken.value) {
-        await getCsrfToken();
-      }
-      if (csrfToken.value) {
-        headers['X-CSRF-Token'] = csrfToken.value;
-      }
     }
 
     return $fetch<T>(url, {
@@ -58,7 +32,6 @@ export const useApi = () => {
   };
 
   return {
-    getCsrfToken,
     // Public Endpoints
     getProducts: async () => {
       const response = await $fetch<any>('/products', { baseURL: baseUrl });

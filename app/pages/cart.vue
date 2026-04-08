@@ -29,34 +29,69 @@ const formData = reactive({
 });
 
 const loading = ref(false);
-const checkoutSuccess = ref(false);
-const orderData = ref<any>(null);
+
+// Persist pending order, not vanished when page refreshed
+const pendingOrderCookie = useCookie<any>('pending_order', {
+  maxAge: 60 * 60 * 2, // 2 hours (match Midtrans token expiry)
+  path: '/',
+  sameSite: 'lax' as const,
+});
+const paymentStatusCookie = useCookie<'paid' | 'pending' | 'cancelled' | null>('payment_status', {
+  maxAge: 60 * 60 * 2,
+  path: '/',
+  sameSite: 'lax' as const,
+});
+
+// Restore state from cookies on page load
+const checkoutSuccess = ref(!!pendingOrderCookie.value);
+const orderData = ref<any>(pendingOrderCookie.value || null);
+const paymentStatus = ref(paymentStatusCookie.value || null);
+
+// Save pending order state to cookies
+const savePendingOrder = (order: any, status: 'paid' | 'pending' | 'cancelled') => {
+  orderData.value = order;
+  paymentStatus.value = status;
+  pendingOrderCookie.value = order;
+  paymentStatusCookie.value = status;
+  checkoutSuccess.value = true;
+};
+
+// Clear pending order (after payment success or manual reset)
+const clearPendingOrder = () => {
+  orderData.value = null;
+  paymentStatus.value = null;
+  pendingOrderCookie.value = null;
+  paymentStatusCookie.value = null;
+  checkoutSuccess.value = false;
+};
 
 const handleCheckout = async () => {
   if (cartItems.value.length === 0) return;
   
   loading.value = true;
   try {
+    const sanitizedPhone = formData.customer_phone.replace(/\D/g, '');
     const payload = {
       ...formData,
+      customer_phone: sanitizedPhone,
       items: cartStore.items
     };
     
-    const response = await checkoutOrder(payload);
-    orderData.value = response;
+    const rawResponse = await checkoutOrder(payload);
+    const response = rawResponse.data || rawResponse;
     
     // Trigger Midtrans Snap
     const snap = (window as any).snap;
-    if (snap) {
+    if (snap && response.snap_token) {
       snap.pay(response.snap_token, {
         onSuccess: (result: any) => {
           console.log('Payment success:', result);
-          checkoutSuccess.value = true;
+          savePendingOrder(response, 'paid');
           cartStore.clearCart();
         },
         onPending: (result: any) => {
           console.log('Payment pending:', result);
-          checkoutSuccess.value = true;
+          savePendingOrder(response, 'pending');
           cartStore.clearCart();
         },
         onError: (result: any) => {
@@ -64,21 +99,48 @@ const handleCheckout = async () => {
           alert('Pembayaran gagal, silakan coba lagi.');
         },
         onClose: () => {
-          console.log('Snap popup closed');
-          // Still show WhatsApp option even if closed, as the order is created
-          checkoutSuccess.value = true;
-          cartStore.clearCart();
+          console.log('Snap popup closed by user');
+          alert('Pembayaran dibatalkan. Anda dapat mencoba checkout kembali.');
         }
       });
-    } else {
-      // Fallback if snap not loaded
+    } else if (response.snap_redirect_url) {
       window.location.href = response.snap_redirect_url;
+    } else {
+      // No Midtrans token — go directly to WhatsApp confirmation
+      savePendingOrder(response, 'pending');
+      cartStore.clearCart();
     }
   } catch (error: any) {
     console.error('Checkout error:', error);
-    alert(error.data?.message || 'Gagal melakukan checkout. Periksa kembali data Anda.');
+    const detail = error.data?.detail || error.data?.message || error.data?.error || error.statusMessage || 'Gagal melakukan checkout. Periksa kembali data Anda.';
+    alert(`Checkout Gagal: ${detail}`);
   } finally {
     loading.value = false;
+  }
+};
+
+const resumePayment = () => {
+  const snap = (window as any).snap;
+  const token = orderData.value?.snap_token;
+  if (snap && token) {
+    snap.pay(token, {
+      onSuccess: (result: any) => {
+        console.log('Payment success:', result);
+        savePendingOrder(orderData.value, 'paid');
+      },
+      onPending: (result: any) => {
+        console.log('Payment still pending:', result);
+      },
+      onError: (result: any) => {
+        console.error('Payment error:', result);
+        alert('Pembayaran gagal, silakan coba lagi.');
+      },
+      onClose: () => {
+        console.log('Snap popup closed again');
+      }
+    });
+  } else if (orderData.value?.snap_redirect_url) {
+    window.open(orderData.value.snap_redirect_url, '_blank');
   }
 };
 
@@ -93,16 +155,16 @@ const goToWhatsApp = () => {
   <div class="container mx-auto px-4 py-12 max-w-5xl">
     <h1 class="text-3xl font-bold text-gray-800 mb-8">Keranjang Belanja</h1>
 
-    <div v-if="checkoutSuccess" class="bg-white rounded-2xl shadow-xl p-8 text-center border border-green-100">
+    <!-- Pending Order Banner (shown alongside cart items) -->
+    <div v-if="checkoutSuccess && paymentStatus === 'paid'" class="bg-white rounded-2xl shadow-xl p-8 text-center border border-green-100 mb-8">
       <div class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6">
         <Icon name="uil:check" class="text-5xl" />
       </div>
-      <h2 class="text-2xl font-bold text-gray-800">Pesanan Berhasil Dibuat!</h2>
+      <h2 class="text-2xl font-bold text-gray-800">Pembayaran Berhasil!</h2>
       <p class="text-gray-500 mt-2 mb-8">
-        Terima kasih {{ orderData?.customer_name }}. Pesanan Anda <b>#{{ orderData?.order_number }}</b> telah kami terima.
-        Silakan selesaikan pembayaran dan konfirmasi melalui WhatsApp.
+        Terima kasih {{ orderData?.customer_name }}. Pesanan <b>#{{ orderData?.order_number }}</b> telah dibayar.
+        Silakan konfirmasi melalui WhatsApp agar pesanan segera diproses.
       </p>
-      
       <div class="flex flex-col sm:flex-row gap-4 justify-center">
         <button 
           @click="goToWhatsApp"
@@ -111,30 +173,65 @@ const goToWhatsApp = () => {
           <Icon name="uil:whatsapp" class="text-2xl" />
           Konfirmasi via WhatsApp
         </button>
-        <NuxtLink 
-          to="/"
+        <button
+          @click="clearPendingOrder()"
           class="flex items-center justify-center gap-2 px-8 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition"
         >
-          Belanja Lagi
-        </NuxtLink>
+          Tutup
+        </button>
       </div>
     </div>
 
-    <div v-else-if="cartItems.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Pending Payment Banner (compact, coexists with cart) -->
+    <div v-if="checkoutSuccess && paymentStatus !== 'paid'" class="bg-yellow-50 rounded-2xl shadow-md p-6 border border-yellow-200 mb-8">
+      <div class="flex flex-col sm:flex-row items-center gap-4">
+        <div class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center shrink-0">
+          <Icon name="uil:clock" class="text-3xl" />
+        </div>
+        <div class="flex-1 text-center sm:text-left">
+          <h3 class="font-bold text-gray-800 text-lg">Pesanan Menunggu Pembayaran</h3>
+          <p class="text-gray-500 text-sm">
+            Pesanan <b>#{{ orderData?.order_number }}</b> belum dibayar. Selesaikan pembayaran atau batalkan.
+          </p>
+        </div>
+        <div class="flex gap-3 shrink-0">
+          <button
+            v-if="orderData?.snap_token"
+            @click="resumePayment"
+            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition text-sm"
+          >
+            <Icon name="uil:credit-card" class="text-lg" />
+            Lanjutkan Bayar
+          </button>
+          <button
+            @click="clearPendingOrder()"
+            class="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition text-sm"
+          >
+            Batalkan
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cart Items (always visible when items exist) -->
+    <div v-if="cartItems.length > 0" class="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <!-- Cart Items List -->
       <div class="lg:col-span-2 space-y-4">
         <div v-for="item in cartItems" :key="item.product_id" class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-          <img :src="item.product?.image_url || 'https://via.placeholder.com/100'" class="w-20 h-20 object-cover rounded-lg" />
+          <img :src="item.product?.image_url || 'https://placehold.co/100x100?text=Product'" class="w-20 h-20 object-cover rounded-lg" />
           <div class="flex-1">
             <h3 class="font-bold text-gray-800">{{ item.product?.name }}</h3>
             <p class="text-blue-600 font-medium">
               {{ new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(item.product?.price || 0) }}
             </p>
+            <p class="text-xs" :class="(item.product?.stock ?? 0) - item.quantity <= 3 ? 'text-red-500' : 'text-gray-400'">
+              Sisa stok: {{ (item.product?.stock ?? 0) - item.quantity }}
+            </p>
           </div>
           <div class="flex items-center gap-3">
             <button 
               @click="cartStore.addItem(item.product_id, -1)" 
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
               :disabled="item.quantity <= 1"
             >
               <Icon name="uil:minus" />
@@ -142,7 +239,8 @@ const goToWhatsApp = () => {
             <span class="font-bold w-6 text-center">{{ item.quantity }}</span>
             <button 
               @click="cartStore.addItem(item.product_id, 1)" 
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition"
+              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
+              :disabled="item.quantity >= (item.product?.stock ?? 0)"
             >
               <Icon name="uil:plus" />
             </button>
@@ -199,7 +297,8 @@ const goToWhatsApp = () => {
       </div>
     </div>
 
-    <div v-else class="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
+    <!-- Empty Cart (only when no items AND no pending order) -->
+    <div v-else-if="!checkoutSuccess" class="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm">
       <Icon name="uil:shopping-cart" class="text-7xl text-gray-200 mb-4" />
       <h2 class="text-2xl font-bold text-gray-800">Keranjang Anda Kosong</h2>
       <p class="text-gray-500 mt-2 mb-8">Pilih produk favorit Anda terlebih dahulu.</p>
@@ -211,7 +310,6 @@ const goToWhatsApp = () => {
 </template>
 
 <style scoped>
-/* Optional: prevent body scroll when snap popup is open */
 :global(.snap-pay-modal) {
   z-index: 9999 !important;
 }

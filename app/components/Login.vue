@@ -17,11 +17,7 @@ const handleLogin = async () => {
 
   try {
     const response = await adminLogin(formData);
-    
-    // Store auth data
     authStore.setAuth(response.user, response.token);
-    
-    // Success redirect
     router.push('/');
   } catch (error: any) {
     console.error('Login error:', error);

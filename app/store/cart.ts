@@ -1,50 +1,59 @@
-import { defineStore } from 'pinia';
-import type { CheckoutItem } from '~/types';
+import { defineStore } from "pinia";
+import { ref, computed, watch } from "vue";
+import type { CheckoutItem } from "~/types";
 
 const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 30, // 30 days
-  path: '/',
-  sameSite: 'lax' as const,
+  path: "/",
+  sameSite: "lax" as const,
 };
 
-export const useCartStore = defineStore('cart', {
-  state: () => {
-    const cartCookie = useCookie<CheckoutItem[]>('cart_items', COOKIE_OPTIONS);
-    return {
-      items: cartCookie.value || ([] as CheckoutItem[]),
-    };
-  },
-  getters: {
-    totalItems: (state) => state.items.reduce((sum, i) => sum + i.quantity, 0),
-  },
-  actions: {
-    _persist() {
-      const cartCookie = useCookie<CheckoutItem[]>('cart_items', COOKIE_OPTIONS);
-      cartCookie.value = this.items;
+export const useCartStore = defineStore("cart", () => {
+  const cartCookie = useCookie<CheckoutItem[]>("cart_items", COOKIE_OPTIONS);
+  const items = ref<CheckoutItem[]>(cartCookie.value || []);
+
+  watch(
+    items,
+    (newItems) => {
+      cartCookie.value = newItems;
     },
-    addItem(productId: string, quantity: number = 1) {
-      const existing = this.items.find(i => i.product_id === productId);
-      if (existing) {
-        existing.quantity += quantity;
-      } else {
-        this.items.push({ product_id: productId, quantity });
-      }
-      this._persist();
-    },
-    updateQuantity(productId: string, quantity: number) {
-      const item = this.items.find(i => i.product_id === productId);
-      if (item) {
-        item.quantity = Math.max(1, quantity);
-        this._persist();
-      }
-    },
-    removeItem(productId: string) {
-      this.items = this.items.filter(i => i.product_id !== productId);
-      this._persist();
-    },
-    clearCart() {
-      this.items = [];
-      this._persist();
-    },
-  },
+    { deep: true },
+  );
+
+  const totalItems = computed(() =>
+    items.value.reduce((sum, item) => sum + item.quantity, 0),
+  );
+
+  function addItem(productId: string, quantity: number = 1) {
+    const existing = items.value.find((i) => i.product_id === productId);
+    if (existing) {
+      existing.quantity += quantity;
+    } else {
+      items.value.push({ product_id: productId, quantity });
+    }
+  }
+
+  function updateQuantity(productId: string, quantity: number) {
+    const item = items.value.find((i) => i.product_id === productId);
+    if (item) {
+      item.quantity = Math.max(1, quantity);
+    }
+  }
+
+  function removeItem(productId: string) {
+    items.value = items.value.filter((i) => i.product_id !== productId);
+  }
+
+  function clearCart() {
+    items.value = [];
+  }
+
+  return {
+    items,
+    totalItems,
+    addItem,
+    updateQuantity,
+    removeItem,
+    clearCart,
+  };
 });

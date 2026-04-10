@@ -59,6 +59,7 @@ export interface AddProductRequest {
   category_id: string;
   description?: string;
   stock?: number;
+  image_url?: string;
 }
 
 export interface UpdateProductRequest {
@@ -66,6 +67,7 @@ export interface UpdateProductRequest {
   price?: number;
   stock?: number;
   is_active?: boolean;
+  image_url?: string;
 }
 
 export interface UpdateCategoryRequest {

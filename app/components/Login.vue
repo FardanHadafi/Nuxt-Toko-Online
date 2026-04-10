@@ -17,8 +17,9 @@ const handleLogin = async () => {
 
   try {
     const response = await adminLogin(formData);
-    authStore.setAuth(response.user, response.token);
-    router.push('/');
+    const dataAuth = response.data || response;
+    authStore.setAuth(dataAuth.user, dataAuth.token);
+    router.push('/admin/dashboard');
   } catch (error: any) {
     console.error('Login error:', error);
     errorMessage.value = error.data?.message || 'Terjadi kesalahan saat login. Periksa username dan password Anda.';

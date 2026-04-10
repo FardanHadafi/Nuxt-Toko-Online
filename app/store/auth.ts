@@ -1,61 +1,28 @@
-import { defineStore } from 'pinia';
-import type { User } from '~/types';
+import { defineStore } from "pinia";
+import { computed } from "vue";
+import type { User } from "~/types";
 
-export const useAuthStore = defineStore('auth', {
-  state: () => {
-    const cookieOptions = {
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      path: '/',
-      sameSite: 'strict' as const,
-      secure: true,
-    };
+export const useAuthStore = defineStore("auth", () => {
+  const cookieOptions = { maxAge: 60 * 60 * 24 * 7, path: "/" };
+  const tokenCookie = useCookie<string | null>("token", cookieOptions);
+  const userCookie = useCookie<User | null>("user", cookieOptions);
+  const isLoggedIn = computed(() => !!tokenCookie.value);
 
-    const tokenCookie = useCookie<string | null>('token', cookieOptions);
-    const userCookie = useCookie<User | null>('user', cookieOptions);
-    
-    return {
-      user: userCookie.value || null,
-      token: tokenCookie.value || null,
-    };
-  },
-  getters: {
-    isLoggedIn: (state) => !!state.token,
-  },
-  actions: {
-    setAuth(user: User, token: string) {
-      // Configuration for persistence
-      const cookieOptions = {
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        path: '/',
-        sameSite: 'strict' as const,
-        secure: true,
-      };
+  function setAuth(user: User, token: string) {
+    userCookie.value = user;
+    tokenCookie.value = token;
+  }
 
-      const tokenCookie = useCookie<string | null>('token', cookieOptions);
-      const userCookie = useCookie<User | null>('user', cookieOptions);
-      
-      this.user = user;
-      this.token = token;
-      
-      tokenCookie.value = token;
-      userCookie.value = user;
-    },
-    logout() {
-      // Must use same options to clear correctly
-      const cookieOptions = {
-        path: '/',
-        sameSite: 'strict' as const,
-        secure: true,
-      };
+  function logout() {
+    userCookie.value = null;
+    tokenCookie.value = null;
+  }
 
-      const tokenCookie = useCookie<string | null>('token', cookieOptions);
-      const userCookie = useCookie<User | null>('user', cookieOptions);
-      
-      this.user = null;
-      this.token = null;
-      
-      tokenCookie.value = null;
-      userCookie.value = null;
-    },
-  },
+  return {
+    user: userCookie,
+    token: tokenCookie,
+    isLoggedIn,
+    setAuth,
+    logout,
+  };
 });

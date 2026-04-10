@@ -1,17 +1,10 @@
 <script setup lang="ts">
-const authStore = useAuthStore();
 const cartStore = useCartStore();
-const router = useRouter();
-
-// Check if there's a pending (unpaid) order
-const pendingOrderCookie = useCookie<any>('pending_order');
-const paymentStatusCookie = useCookie<string | null>('payment_status');
-const hasPendingPayment = computed(() => !!pendingOrderCookie.value && paymentStatusCookie.value !== 'paid');
-
-const handleLogout = () => {
-  authStore.logout();
-  router.push("/admin/login");
-};
+const pendingOrderCookie = useCookie<any>("pending_order");
+const paymentStatusCookie = useCookie<string | null>("payment_status");
+const hasPendingPayment = computed(
+  () => !!pendingOrderCookie.value && paymentStatusCookie.value !== "paid",
+);
 </script>
 
 <template>

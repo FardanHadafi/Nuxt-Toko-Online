@@ -5,10 +5,10 @@ services:
       args:
         # host.docker.internal = host machine from inside Docker (Windows/Mac)
         - NUXT_PROXY_TARGET=http://host.docker.internal
-        - MIDTRANS_CLIENT_KEY=${MIDTRANS_CLIENT_KEY}
+        - NUXT_PUBLIC_MIDTRANS_CLIENT_KEY=${NUXT_PUBLIC_MIDTRANS_CLIENT_KEY}
     container_name: toko_frontend
     environment:
-      - MIDTRANS_CLIENT_KEY=${MIDTRANS_CLIENT_KEY}
+      - NUXT_PUBLIC_MIDTRANS_CLIENT_KEY=${NUXT_PUBLIC_MIDTRANS_CLIENT_KEY}
       - MIDTRANS_MERCHANT_ID=${MIDTRANS_MERCHANT_ID}
     ports:
       - "3000:3000"

@@ -1,14 +1,14 @@
+# check=skip=SecretsUsedInArgOrEnv
 FROM oven/bun:1 AS builder
 
 WORKDIR /app
 
 # Build arguments (needed at nuxt build time)
 ARG NUXT_PROXY_TARGET=http://host.docker.internal
-ARG MIDTRANS_CLIENT_KEY=
+ARG NUXT_PUBLIC_MIDTRANS_CLIENT_KEY
 
 # Set as env vars so nuxt.config.ts can read them during build
 ENV NUXT_PROXY_TARGET=$NUXT_PROXY_TARGET
-ENV MIDTRANS_CLIENT_KEY=$MIDTRANS_CLIENT_KEY
 
 # Copy dependency files first
 COPY package.json bun.lock ./
@@ -20,9 +20,9 @@ RUN bun install --frozen-lockfile
 COPY . .
 
 # Build Nuxt for production (SSR)
-RUN bun run build
+RUN NUXT_PUBLIC_MIDTRANS_CLIENT_KEY=$NUXT_PUBLIC_MIDTRANS_CLIENT_KEY bun run build
 
-FROM oven/bun:1-slim AS production
+FROM oven/bun:alpine AS production
 
 WORKDIR /app
 

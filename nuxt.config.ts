@@ -17,7 +17,7 @@ export default defineNuxtConfig({
       script: [
         {
           src: "https://app.sandbox.midtrans.com/snap/snap.js",
-          "data-client-key": process.env.MIDTRANS_CLIENT_KEY || "",
+          "data-client-key": process.env.NUXT_PUBLIC_MIDTRANS_CLIENT_KEY || "",
         },
       ],
     },
@@ -30,7 +30,7 @@ export default defineNuxtConfig({
   runtimeConfig: {
     public: {
       apiBase: "/api",
-      midtransClientKey: process.env.MIDTRANS_CLIENT_KEY || "",
+      midtransClientKey: process.env.NUXT_PUBLIC_MIDTRANS_CLIENT_KEY || "",
     },
   },
   routeRules: {

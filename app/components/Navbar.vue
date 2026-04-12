@@ -1,56 +1,36 @@
-<script setup lang="ts">
-const cartStore = useCartStore();
-const pendingOrderCookie = useCookie<any>("pending_order");
-const paymentStatusCookie = useCookie<string | null>("payment_status");
-const hasPendingPayment = computed(
-  () => !!pendingOrderCookie.value && paymentStatusCookie.value !== "paid",
-);
-</script>
-
 <template>
-  <div
-    class="flex justify-between items-center h-16 bg-white border-b border-gray-100 px-6 sticky top-0 z-50"
-  >
-    <!--Nama Toko / Logo Brand-->
-    <NuxtLink to="/" class="text-3xl font-bold text-blue-600"
-      >Toko Online</NuxtLink
+  <div class="fixed top-0 left-0 z-50 w-full">
+    <div
+      class="relative flex items-center justify-center bg-white/50 backdrop-blur-xs shadow-sm border border-white/50 px-6 py-3 h-24"
     >
-
-    <!--Navigation Links-->
-    <nav class="hidden md:flex items-center gap-8">
-      <NuxtLink to="/" class="hover:text-blue-500 transition">Home</NuxtLink>
-      <NuxtLink to="/product" class="hover:text-blue-500 transition"
-        >Products</NuxtLink
-      >
-      <NuxtLink to="/category" class="hover:text-blue-500 transition"
-        >Categories</NuxtLink
-      >
-      <NuxtLink to="/about" class="hover:text-blue-500 transition"
-        >About</NuxtLink
-      >
-    </nav>
-
-    <!--Cart & Profile-->
-    <div class="flex items-center gap-4">
-      <NuxtLink
-        to="/cart"
-        class="p-2 hover:bg-gray-100 rounded-full transition relative"
-      >
-        <Icon name="uil:shopping-cart" class="text-2xl" />
-        <!-- Cart item count -->
-        <span
-          v-if="cartStore.totalItems > 0"
-          class="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full border-2 border-white"
-        >
-          {{ cartStore.totalItems }}
-        </span>
-        <!-- Pending payment indicator -->
-        <span
-          v-if="hasPendingPayment"
-          class="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-yellow-400 rounded-full border-2 border-white animate-pulse"
-          title="Ada pembayaran tertunda"
+      <div class="absolute left-0 pl-50">
+        <img
+          src="/assets/products/Brand-Logo.avif"
+          alt="Brand Logo"
+          class="h-12 object-contain cursor-pointer"
         />
-      </NuxtLink>
+      </div>
+      <nav
+        class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500"
+      >
+        <NuxtLink to="/" class="hover:text-gray-900 transition-colors"
+          >Home</NuxtLink
+        >
+        <NuxtLink to="/products" class="hover:text-gray-900 transition-colors"
+          >Categories</NuxtLink
+        >
+        <NuxtLink
+          to="/testimonial"
+          class="hover:text-gray-900 transition-colors"
+          >Products</NuxtLink
+        >
+        <NuxtLink to="/about" class="hover:text-gray-900 transition-colors"
+          >About</NuxtLink
+        >
+        <NuxtLink to="/about" class="hover:text-gray-900 transition-colors"
+          >Contact</NuxtLink
+        >
+      </nav>
     </div>
   </div>
 </template>

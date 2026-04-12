@@ -25,62 +25,59 @@ const addToCart = () => {
 </script>
 
 <template>
-  <div
-    class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden group hover:shadow-md transition duration-300"
-  >
-    <div class="aspect-square bg-gray-50 relative overflow-hidden">
+  <div class="group cursor-pointer flex flex-col gap-3">
+    <!-- Image Area -->
+    <div class="relative bg-zinc-100 rounded-2xl aspect-square overflow-hidden flex items-center justify-center p-6">
       <img
         :src="product.image_url || 'https://placehold.co/300x300?text=No+Image'"
         :alt="product.name"
-        class="w-full h-full object-cover group-hover:scale-105 transition duration-500"
+        class="w-full h-full object-contain group-hover:scale-105 transition-transform duration-700 ease-out"
       />
+      
+      <!-- Out of Stock Overlay -->
       <div
         v-if="isOutOfStock"
-        class="absolute inset-0 bg-black/40 flex items-center justify-center"
+        class="absolute inset-0 bg-white/50 backdrop-blur-[2px] flex items-center justify-center"
       >
-        <span
-          class="bg-red-500 text-white px-3 py-1 rounded text-sm font-bold uppercase"
-          >Stok Habis</span
-        >
+        <span class="bg-zinc-950 text-white px-3 py-1.5 rounded-full text-xs font-semibold tracking-wide">
+          Stok Habis
+        </span>
       </div>
+
+      <!-- Add to Cart (Hover Reveal) -->
+      <button
+        v-if="!isOutOfStock && !isCartFull"
+        @click.stop="addToCart"
+        class="absolute bottom-4 right-4 bg-zinc-950 text-white w-10 h-10 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 shadow-lg"
+        title="Add to Cart"
+      >
+        <Icon name="uil:plus" class="text-xl" />
+      </button>
     </div>
 
-    <div class="p-4">
-      <h3 class="font-bold text-gray-800 text-lg line-clamp-1">
+    <!-- Content Area -->
+    <div class="flex flex-col gap-1 px-1">
+      <!-- Top info line: Name -->
+      <h3 class="font-semibold text-zinc-900 text-base leading-snug line-clamp-1">
         {{ product.name }}
       </h3>
-      <p class="text-sm text-gray-500 mt-1 line-clamp-2 h-10">
-        {{ product.description }}
-      </p>
-
-      <div class="flex items-center justify-between mt-4">
-        <div>
-          <div class="text-blue-600 font-bold text-xl">
-            {{
-              new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                minimumFractionDigits: 0,
-              }).format(product.price)
-            }}
-          </div>
-          <p class="text-xs mt-0.5" :class="remainingStock <= 3 && !isOutOfStock ? 'text-red-500 font-medium' : 'text-gray-400'">
-            {{ isOutOfStock ? '' : `Sisa stok: ${remainingStock}` }}
-          </p>
-        </div>
-
-        <button
-          @click="addToCart"
-          :disabled="isOutOfStock || isCartFull"
-          class="p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition disabled:bg-gray-300 disabled:cursor-not-allowed group"
-          :title="isCartFull ? 'Stok maksimum tercapai' : 'Tambah ke Keranjang'"
-        >
-          <Icon
-            name="uil:shopping-cart-alt"
-            class="text-xl group-hover:scale-110 transition"
-          />
-        </button>
+      
+      <!-- Details line -->
+      <div class="flex items-center gap-3 mt-1.5">
+        <span v-if="!isOutOfStock" class="text-[11px] font-semibold text-zinc-500 uppercase tracking-widest bg-zinc-100 px-2 py-0.5 rounded border border-zinc-200">
+          In Stock
+        </span>
+        <span class="text-zinc-600 font-medium text-sm">
+          {{
+            new Intl.NumberFormat("id-ID", {
+              style: "currency",
+              currency: "IDR",
+              minimumFractionDigits: 0,
+            }).format(product.price)
+          }}
+        </span>
       </div>
     </div>
   </div>
 </template>
+

@@ -79,7 +79,7 @@ onMounted(() => {
   <div>
     <main
       id="home"
-      class="min-h-screen bg-gray-100 pt-36 flex flex-col items-center pb-24"
+      class="min-h-screen bg-gray-100 pt-48 flex flex-col items-center pb-24"
     >
       <div class="text-center max-w-xl px-4 hero-content">
         <h1 class="font-light text-6xl leading-tight tracking-tight">
@@ -94,10 +94,11 @@ onMounted(() => {
       <!--Product Grid-->
       <div id="categories" class="w-full max-w-360 px-4 mt-24">
         <div class="grid grid-cols-2 gap-4">
-          <div
+          <NuxtLink
             v-for="product in productGrid"
             :key="product.category"
-            class="group cursor-pointer bg-white product-grid-item"
+            :to="`/category/${product.category.toLowerCase().replace(' ', '-')}`"
+            class="group cursor-pointer bg-white product-grid-item block"
           >
             <div class="overflow-hidden bg-[#f0f0f0]">
               <img
@@ -119,7 +120,7 @@ onMounted(() => {
                 {{ product.item }}
               </p>
             </div>
-          </div>
+          </NuxtLink>
         </div>
       </div>
 
@@ -381,6 +382,5 @@ onMounted(() => {
         </div>
       </div>
     </main>
-    <Footer />
   </div>
 </template>

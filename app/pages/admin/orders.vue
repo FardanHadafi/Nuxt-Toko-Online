@@ -1,14 +1,15 @@
 <script setup lang="ts">
+import { gsap } from "gsap";
 import type { Order } from "~/types";
 
 definePageMeta({
   layout: "admin",
   middleware: "admin",
-  title: "Riwayat Pesanan",
+  title: "Order Cycle Ledger",
 });
 
 useHead({
-  title: "Riwayat Pesanan | Admin Panel",
+  title: "Orders | Uncover Admin",
 });
 
 const { getAllOrders, getOrderById, getProducts } = useApi();
@@ -36,6 +37,18 @@ const fetchData = async () => {
       });
     }
     productMap.value = pMap;
+
+    if (import.meta.client) {
+      setTimeout(() => {
+        gsap.from(".order-row", {
+          opacity: 0,
+          y: 20,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: "power2.out",
+        });
+      }, 100);
+    }
   } catch (error) {
     console.error("Failed to load orders:", error);
   } finally {
@@ -45,6 +58,14 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
+  if (import.meta.client) {
+    gsap.from(".admin-header", {
+      opacity: 0,
+      x: -30,
+      duration: 1,
+      ease: "power3.out",
+    });
+  }
 });
 
 const getStatusColor = (status: string) => {
@@ -52,14 +73,14 @@ const getStatusColor = (status: string) => {
     case "paid":
     case "success":
     case "settlement":
-      return "bg-green-100 text-green-800 border-green-200";
+      return "bg-black text-white";
     case "pending":
-      return "bg-yellow-100 text-yellow-800 border-yellow-200";
+      return "bg-orange-50 text-[#FF5A00] border border-orange-100";
     case "expired":
     case "canceled":
-      return "bg-red-100 text-red-800 border-red-200";
+      return "bg-gray-100 text-gray-400";
     default:
-      return "bg-gray-100 text-gray-800 border-gray-200";
+      return "bg-gray-50 text-gray-400";
   }
 };
 
@@ -68,12 +89,12 @@ const getStatusLabel = (status: string) => {
     case "paid":
     case "success":
     case "settlement":
-      return "LUNAS";
+      return "AUTHENTICATED";
     case "pending":
-      return "MENUNGGU PEMBAYARAN";
+      return "AWAITING CLEARANCE";
     case "expired":
     case "canceled":
-      return "KADALUARSA / Batal";
+      return "VOID / TERMINATED";
     default:
       return status.toUpperCase();
   }
@@ -88,8 +109,8 @@ const openDetailModal = async (orderId: string) => {
     const data = await getOrderById(orderId);
     selectedOrder.value = data;
   } catch (error) {
-    console.error("Gagal memuat detail pesanan:", error);
-    alert("Detail pesanan gagal dimuat.");
+    console.error("Gagal memuat detail:", error);
+    alert("Manifest retrieval failed.");
     isModalOpen.value = false;
   } finally {
     detailLoading.value = false;
@@ -103,13 +124,15 @@ const closeDetailModal = () => {
 const formatDate = (dateStr: string) => {
   if (!dateStr) return "-";
   const d = new Date(dateStr);
-  return new Intl.DateTimeFormat("id-ID", {
+  return new Intl.DateTimeFormat("en-US", {
     day: "numeric",
-    month: "long",
+    month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(d);
+  })
+    .format(d)
+    .replace(",", " pukul");
 };
 
 const formatPrice = (price: number) => {
@@ -122,123 +145,121 @@ const formatPrice = (price: number) => {
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
-    <div class="flex flex-col flex-wrap gap-4 justify-between items-start">
+  <div class="space-y-12">
+    <div
+      class="flex flex-col lg:flex-row gap-8 justify-between items-start admin-header"
+    >
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Manajemen Pesanan</h1>
-        <p class="text-gray-500">
-          Pantau seluruh siklus masuk pesanan dan mutasi pembayaran Anda.
+        <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+          Order <span class="font-bold not-italic">Ledger</span>
+        </h1>
+        <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">
+          Review transaction cycles and payment authentications
         </p>
       </div>
       <div
-        class="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 rounded-lg text-sm font-medium border border-blue-100"
+        class="inline-flex items-center gap-4 px-6 py-4 bg-white text-gray-400 text-[10px] font-bold uppercase tracking-widest border border-gray-100 shadow-sm"
       >
-        <Icon name="uil:info-circle" class="text-lg" />
-        Status pesanan diupdate secara otomatis oleh Midtrans Webhook.
+        <Icon name="uil:sync" class="text-lg text-[#FF5A00]" />
+        Real-time Midtrans Sync Active
       </div>
     </div>
-
-    <!-- Data Table -->
-    <div
-      class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-    >
-      <div v-if="loading" class="p-12 text-center text-gray-500">
+    <div class="bg-white border border-gray-100 shadow-sm overflow-hidden">
+      <div v-if="loading" class="p-24 text-center">
         <Icon
           name="svg-spinners:180-ring"
-          class="text-4xl text-blue-500 mb-4 inline-block"
+          class="text-4xl text-[#FF5A00] mb-4 inline-block"
         />
-        <p>Menyelaraskan riwayat pesanan...</p>
-      </div>
-
-      <div
-        v-else-if="orders.length === 0"
-        class="p-16 text-center text-gray-500"
-      >
-        <Icon
-          name="uil:receipt"
-          class="text-6xl text-gray-300 mb-4 inline-block"
-        />
-        <p class="text-lg font-medium text-gray-800">Belum ada pesanan masuk</p>
-        <p class="text-sm">
-          Riwayat transaksi pelanggan Anda akan muncul di sini.
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          Compiling History...
         </p>
       </div>
-
+      <div
+        v-else-if="orders.length === 0"
+        class="p-24 text-center flex flex-col items-center"
+      >
+        <div
+          class="w-20 h-20 bg-gray-50 flex items-center justify-center text-gray-200 mb-6"
+        >
+          <Icon name="uil:receipt" class="text-5xl" />
+        </div>
+        <p class="text-xl font-light text-gray-900 italic">
+          No transactions <span class="font-bold not-italic">logged.</span>
+        </p>
+        <p class="text-xs text-gray-400 uppercase tracking-widest mt-2">
+          Your customer purchase history will appear here.
+        </p>
+      </div>
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Waktu Order
+                Timestamp
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Order ID
+                Reference ID
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Tagihan Total
+                Valuation
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Status Transaksi
+                Outcome
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Aksi
+                Analysis
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-100 uppercase text-sm">
+          <tbody>
             <tr
               v-for="order in orders"
               :key="order.id"
-              class="hover:bg-gray-50 transition"
+              class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors order-row"
             >
-              <!-- Tanggal / Waktu -->
-              <td class="px-6 py-4 whitespace-nowrap text-gray-600">
-                <span class="block font-medium text-gray-900">{{
-                  formatDate(order.created_at).split("pukul")[0]
-                }}</span>
-                <span class="text-xs">{{
-                  formatDate(order.created_at).split("pukul")[1]
-                }}</span>
+              <td class="px-10 py-8 whitespace-nowrap">
+                <span
+                  class="block text-sm font-bold text-gray-900 tracking-tight"
+                  >{{ formatDate(order.created_at).split("pukul")[0] }}</span
+                >
+                <span
+                  class="text-[10px] text-gray-400 font-bold uppercase tracking-widest"
+                  >{{ formatDate(order.created_at).split("pukul")[1] }}</span
+                >
               </td>
-              <!-- Order ID (UUID Snippet) -->
-              <td
-                class="px-6 py-4 whitespace-nowrap font-mono text-gray-500 font-bold text-xs uppercase cursor-help"
-                :title="order.id"
-              >
-                #{{ order.id.split("-")[0] }}-{{ order.id.split("-")[1] }}
+              <td class="px-10 py-8 whitespace-nowrap">
+                <code
+                  class="text-xs font-mono text-gray-900 bg-gray-50 px-2 py-1 uppercase tracking-tighter"
+                  >ORD-{{ order.id.split("-")[0] }}</code
+                >
               </td>
-              <!-- Harga Total -->
-              <td class="px-6 py-4 whitespace-nowrap text-gray-800 font-bold">
+              <td class="px-10 py-8 whitespace-nowrap text-gray-900 font-bold">
                 {{ formatPrice(order.total_amount) }}
               </td>
-              <!-- Status Badge -->
-              <td class="px-6 py-4 whitespace-nowrap text-center">
+              <td class="px-10 py-8 whitespace-nowrap text-center">
                 <span
                   :class="getStatusColor(order.status)"
-                  class="px-3 py-1.5 inline-flex text-xs font-extrabold rounded-md border tracking-wider uppercase"
+                  class="px-3 py-1.5 text-[9px] font-bold tracking-[0.2em] uppercase"
                 >
                   {{ getStatusLabel(order.status) }}
                 </span>
               </td>
-              <!-- Aksi Modal -->
-              <td class="px-6 py-4 whitespace-nowrap text-center font-medium">
+              <td class="px-10 py-8 whitespace-nowrap text-right">
                 <button
                   @click="openDetailModal(order.id)"
-                  class="text-gray-600 hover:text-blue-600 bg-gray-100 hover:bg-blue-50 px-4 py-1.5 rounded-lg text-sm transition font-bold"
-                  title="Detail Pesanan"
+                  class="bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-colors shadow-sm"
                 >
-                  Lihat Detail
+                  Inspect
                 </button>
               </td>
             </tr>
@@ -246,154 +267,140 @@ const formatPrice = (price: number) => {
         </table>
       </div>
     </div>
-
-    <!-- Order Detail Modal -->
     <div
       v-if="isModalOpen"
-      class="fixed inset-0 z-100 overflow-y-auto"
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
+      class="fixed inset-0 z-100 flex items-center justify-center p-4"
     >
       <div
-        class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+        class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        @click="closeDetailModal"
+      ></div>
+
+      <div
+        class="relative bg-white shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100"
       >
-        <div
-          class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
-          @click="closeDetailModal"
-          aria-hidden="true"
-        ></div>
-        <span
-          class="hidden sm:inline-block sm:align-middle sm:h-screen"
-          aria-hidden="true"
-          >&#8203;</span
-        >
-
-        <div
-          class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-gray-100"
-        >
-          <div v-if="detailLoading" class="p-16 text-center text-gray-500">
-            <Icon
-              name="svg-spinners:180-ring"
-              class="text-4xl text-blue-500 mb-4 inline-block"
-            />
-            <p>Mengunduh Rincian Pesanan...</p>
-          </div>
-
-          <div v-else-if="selectedOrder" class="relative">
-            <!-- Modal Header -->
-            <div
-              class="bg-gray-50 border-b border-gray-100 px-6 py-4 flex justify-between items-center"
+        <div class="absolute top-0 left-0 w-1.5 h-full bg-[#FF5A00]"></div>
+        <div v-if="detailLoading" class="p-24 text-center">
+          <Icon
+            name="svg-spinners:180-ring"
+            class="text-4xl text-[#FF5A00] mb-4 inline-block"
+          />
+          <p
+            class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"
+          >
+            Retrieving Manifest...
+          </p>
+        </div>
+        <div v-else-if="selectedOrder" class="p-12">
+          <div class="flex justify-between items-start mb-12">
+            <div>
+              <h3 class="text-4xl font-light text-gray-900 italic">
+                Order <span class="font-bold not-italic">Manifest.</span>
+              </h3>
+              <p
+                class="text-xs font-mono text-gray-400 mt-2 uppercase tracking-tighter"
+              >
+                Ref: {{ selectedOrder.id }}
+              </p>
+            </div>
+            <button
+              @click="closeDetailModal"
+              class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200"
             >
-              <div>
-                <h3 class="text-lg font-bold text-gray-900">
-                  Rincian Transaksi
-                </h3>
-                <p class="text-sm font-mono text-gray-500">
-                  ID: {{ selectedOrder.id }}
+              <Icon name="uil:times" class="text-2xl" />
+            </button>
+          </div>
+          <div class="space-y-10">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-1">
+              <div class="bg-gray-50 p-6">
+                <p
+                  class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3"
+                >
+                  STATE
+                </p>
+                <span
+                  :class="getStatusColor(selectedOrder.status)"
+                  class="block text-center text-[9px] py-1 font-bold uppercase tracking-widest"
+                >
+                  {{ getStatusLabel(selectedOrder.status) }}
+                </span>
+              </div>
+              <div class="bg-gray-50 p-6 md:col-span-2">
+                <p
+                  class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3"
+                >
+                  TIMESTAMP
+                </p>
+                <p
+                  class="text-xs font-bold text-gray-900 uppercase tracking-tight"
+                >
+                  {{ formatDate(selectedOrder.created_at) }}
                 </p>
               </div>
-              <button
-                @click="closeDetailModal"
-                class="text-gray-400 hover:text-red-500 bg-white border border-gray-200 p-2 rounded-lg transition"
-              >
-                <Icon name="uil:times" class="text-lg block" />
-              </button>
-            </div>
-
-            <!-- Modal Body -->
-            <div class="bg-white px-6 py-5">
-              <!-- Info Singkat -->
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div
-                  class="bg-blue-50 p-3 rounded-lg border border-blue-100/50"
+              <div class="bg-gray-50 p-6">
+                <p
+                  class="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-3"
                 >
-                  <p class="text-xs text-blue-500 font-semibold uppercase mb-1">
-                    Status
-                  </p>
-                  <span
-                    :class="getStatusColor(selectedOrder.status)"
-                    class="block text-center text-xs py-1 rounded w-full font-bold"
-                  >
-                    {{ getStatusLabel(selectedOrder.status) }}
-                  </span>
-                </div>
-                <div
-                  class="bg-blue-50 p-3 rounded-lg border border-blue-100/50 md:col-span-2"
-                >
-                  <p class="text-xs text-blue-500 font-semibold uppercase mb-1">
-                    Tanggal
-                  </p>
-                  <p class="text-sm font-medium text-gray-800">
-                    {{ formatDate(selectedOrder.created_at) }}
-                  </p>
-                </div>
-                <div
-                  class="bg-blue-50 p-3 rounded-lg border border-blue-100/50"
-                >
-                  <p class="text-xs text-blue-500 font-semibold uppercase mb-1">
-                    Total Biaya
-                  </p>
-                  <p class="text-sm font-bold text-blue-700">
-                    {{ formatPrice(selectedOrder.total_amount) }}
-                  </p>
-                </div>
+                  NET TOTAL
+                </p>
+                <p class="text-sm font-bold text-[#FF5A00]">
+                  {{ formatPrice(selectedOrder.total_amount) }}
+                </p>
               </div>
-
-              <h4
-                class="text-sm font-bold text-gray-800 uppercase tracking-widest border-b border-gray-200 pb-2 mb-4 mt-6"
+            </div>
+            <h4
+              class="text-[10px] font-bold text-gray-400 uppercase tracking-[0.3em] pb-3 border-b border-gray-100"
+            >
+              Itemized Allocation
+            </h4>
+            <div class="space-y-4 max-h-80 overflow-y-auto pr-4 scroll-minimal">
+              <div
+                v-if="!selectedOrder.items || selectedOrder.items.length === 0"
+                class="p-10 text-center bg-gray-50 border border-dashed border-gray-200"
               >
-                Item yang Dipesan
-              </h4>
-
-              <!-- Keranjang Belanja -->
-              <div class="space-y-4 max-h-75 overflow-y-auto pr-2">
-                <!-- Jika Array item kosong -->
-                <div
-                  v-if="
-                    !selectedOrder.items || selectedOrder.items.length === 0
-                  "
-                  class="text-center text-gray-400 text-sm py-4"
+                <p
+                  class="text-xs font-bold text-gray-300 uppercase tracking-widest italic"
                 >
-                  Detail rincian barang tidak ditemukan.
-                </div>
-
+                  Inventory data unavailable for this log.
+                </p>
+              </div>
+              <div
+                v-else
+                v-for="(item, index) in selectedOrder.items"
+                :key="index"
+                class="flex gap-6 p-6 border border-gray-50 hover:bg-gray-50/50 transition-colors"
+              >
                 <div
-                  v-else
-                  v-for="(item, index) in selectedOrder.items"
-                  :key="index"
-                  class="flex gap-4 p-4 border border-gray-100 rounded-xl bg-gray-50"
+                  class="shrink-0 w-20 h-20 bg-gray-50 flex items-center justify-center p-2 border border-gray-100 overflow-hidden"
                 >
-                  <div
-                    class="shrink-0 w-16 h-16 bg-gray-200 rounded-lg overflow-hidden border border-gray-200"
-                  >
-                    <img
-                      v-if="productMap[item.product_id]?.image_url"
-                      :src="productMap[item.product_id].image_url"
-                      class="w-full h-full object-cover"
-                    />
-                    <div
-                      v-else
-                      class="w-full h-full flex items-center justify-center text-gray-400"
-                    >
-                      <Icon name="uil:image-v" class="text-2xl" />
-                    </div>
+                  <img
+                    v-if="productMap[item.product_id]?.image_url"
+                    :src="productMap[item.product_id].image_url"
+                    class="w-full h-full object-contain"
+                  />
+                  <div v-else class="text-gray-200">
+                    <Icon name="uil:image-v" class="text-2xl" />
                   </div>
-                  <div class="grow flex flex-col justify-center">
-                    <p class="font-bold text-gray-900 text-sm">
-                      {{
-                        productMap[item.product_id]?.name ||
-                        "Produk ID: " + item.product_id.split("-")[0]
-                      }}
+                </div>
+                <div class="grow flex flex-col justify-center">
+                  <p
+                    class="font-bold text-gray-900 tracking-tight text-base mb-1"
+                  >
+                    {{
+                      productMap[item.product_id]?.name || "Unidentified Asset"
+                    }}
+                  </p>
+                  <div class="flex justify-between items-end">
+                    <p
+                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest"
+                    >
+                      UNIT QTY: {{ item.quantity }}
+                      <span class="mx-2">/</span> UNIT PRICE:
+                      {{ formatPrice(item.price) }}
                     </p>
-                    <div class="flex justify-between items-end mt-1">
-                      <p class="text-sm text-gray-500">
-                        {{ item.quantity }} x {{ formatPrice(item.price) }}
-                      </p>
-                      <p class="font-bold text-gray-800">
-                        {{ formatPrice(item.quantity * item.price) }}
-                      </p>
-                    </div>
+                    <p class="text-sm font-bold text-gray-900 italic">
+                      {{ formatPrice(item.quantity * item.price) }}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -404,3 +411,18 @@ const formatPrice = (price: number) => {
     </div>
   </div>
 </template>
+
+<style scoped>
+.scroll-minimal::-webkit-scrollbar {
+  width: 4px;
+}
+.scroll-minimal::-webkit-scrollbar-track {
+  background: #f9f9f9;
+}
+.scroll-minimal::-webkit-scrollbar-thumb {
+  background: #eee;
+}
+.scroll-minimal::-webkit-scrollbar-thumb:hover {
+  background: #ff5a00;
+}
+</style>

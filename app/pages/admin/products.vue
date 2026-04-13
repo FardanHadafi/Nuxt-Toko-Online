@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { gsap } from "gsap";
 import type {
   Product,
   Category,
@@ -9,11 +10,11 @@ import type {
 definePageMeta({
   layout: "admin",
   middleware: "admin",
-  title: "Manajemen Produk",
+  title: "Inventory Master",
 });
 
 useHead({
-  title: "Kelola Produk | Admin Panel",
+  title: "Inventory | Uncover Admin",
 });
 
 const {
@@ -58,20 +59,32 @@ const handleFileUpload = async (event: Event) => {
     const res = await uploadImage(formData);
     form.image_url = res.url || (res as any).data?.url || "";
   } catch (error) {
-    alert("Gagal mengupload gambar ke server.");
+    alert("Gagal mengupload gambar.");
     console.error(error);
   } finally {
     uploadingImage.value = false;
   }
 };
 
-// Fetch Data
 const fetchData = async () => {
   loading.value = true;
   try {
     const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
     products.value = prods;
     categories.value = cats;
+
+    // GSAP after fetch
+    if (import.meta.client) {
+      setTimeout(() => {
+        gsap.from(".product-row", {
+          opacity: 0,
+          y: 20,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: "power2.out",
+        });
+      }, 100);
+    }
   } catch (error) {
     console.error("Failed to load data:", error);
   } finally {
@@ -81,14 +94,20 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
+  if (import.meta.client) {
+    gsap.from(".admin-header", {
+      opacity: 0,
+      x: -30,
+      duration: 1,
+      ease: "power3.out",
+    });
+  }
 });
 
-// Category helper
 const getCategoryName = (id: string) => {
   return categories.value.find((c) => c.id === id)?.name || "-";
 };
 
-// Modals
 const openAddModal = () => {
   Object.assign(form, initialFormState);
   if (categories.value.length > 0) {
@@ -117,7 +136,6 @@ const closeModal = () => {
   isModalOpen.value = false;
 };
 
-// Form Handlers
 const handleSubmit = async () => {
   submitting.value = true;
   try {
@@ -130,7 +148,6 @@ const handleSubmit = async () => {
         image_url: form.image_url,
       };
       await updateProduct(currentId.value, payload);
-      alert("Produk berhasil diperbarui!");
     } else {
       const payload: AddProductRequest = {
         name: form.name,
@@ -141,128 +158,124 @@ const handleSubmit = async () => {
         image_url: form.image_url,
       };
       await createProduct(payload);
-      alert("Produk baru berhasil ditambahkan!");
     }
     closeModal();
     await fetchData();
   } catch (error: any) {
-    console.error("Submit error:", error);
-    alert("Terjadi kesalahan: " + (error.data?.message || error.message));
+    alert("Error: " + (error.data?.message || error.message));
   } finally {
     submitting.value = false;
   }
 };
 
 const handleDelete = async (id: string) => {
-  if (
-    confirm(
-      "Apakah Anda yakin ingin menghapus produk ini? Tindakan ini tidak dapat dibatalkan.",
-    )
-  ) {
+  if (confirm("Permanently delete this product from inventory?")) {
     try {
       await deleteProduct(id);
       await fetchData();
     } catch (error: any) {
-      alert(
-        "Gagal menghapus produk: " + (error.data?.message || error.message),
-      );
+      alert("Error: " + (error.data?.message || error.message));
     }
   }
 };
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
+  <div class="space-y-12">
     <div
-      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 admin-header"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Manajemen Produk</h1>
-        <p class="text-gray-500">
-          Kelola inventaris dan katalog barang toko Anda.
+        <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+          Product <span class="font-bold not-italic">Inventory</span>
+        </h1>
+        <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">
+          Manage your collection of innovative tech and design
         </p>
       </div>
       <button
         @click="openAddModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition shadow-sm"
+        class="bg-[#FF5A00] text-white px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-black transition-all duration-300 shadow-xl flex items-center gap-3"
       >
-        <Icon name="uil:plus-circle" class="text-xl" />
-        Tambah Produk
+        <Icon name="uil:plus" class="text-lg" />
+        Add New Product
       </button>
     </div>
-
-    <!-- Data Table -->
-    <div
-      class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-    >
-      <div v-if="loading" class="p-12 text-center text-gray-500">
+    <div class="bg-white border border-gray-100 shadow-sm overflow-hidden">
+      <div v-if="loading" class="p-24 text-center">
         <Icon
           name="svg-spinners:180-ring"
-          class="text-4xl text-blue-500 mb-4 inline-block"
+          class="text-4xl text-[#FF5A00] mb-4 inline-block"
         />
-        <p>Memuat data produk...</p>
-      </div>
-
-      <div
-        v-else-if="products.length === 0"
-        class="p-16 text-center text-gray-500"
-      >
-        <Icon name="uil:box" class="text-6xl text-gray-300 mb-4 inline-block" />
-        <p class="text-lg font-medium text-gray-800">Tidak ada produk</p>
-        <p class="text-sm">
-          Silakan tambah produk baru untuk melihatnya di sini.
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          Synchronizing Database...
         </p>
       </div>
-
+      <div
+        v-else-if="products.length === 0"
+        class="p-24 text-center flex flex-col items-center"
+      >
+        <div
+          class="w-20 h-20 bg-gray-50 flex items-center justify-center text-gray-200 mb-6"
+        >
+          <Icon name="uil:box" class="text-5xl" />
+        </div>
+        <p class="text-xl font-light text-gray-900 italic">
+          No products <span class="font-bold not-italic">found.</span>
+        </p>
+        <p class="text-xs text-gray-400 uppercase tracking-widest mt-2">
+          Start by adding your first masterpiece to the catalog.
+        </p>
+      </div>
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Info Produk
+                Product Details
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Kategori
+                Category
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Harga
+                Price
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Stok
+                Inv.
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
                 Status
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Aksi
+                Actions
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-100">
+          <tbody>
             <tr
               v-for="product in products"
               :key="product.id"
-              class="hover:bg-gray-50 transition"
+              class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors product-row"
             >
-              <!-- Info Produk -->
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="flex items-center">
-                  <div class="shrink-0 h-10 w-10">
+              <td class="px-10 py-8 whitespace-nowrap">
+                <div class="flex items-center gap-6">
+                  <div
+                    class="shrink-0 h-16 w-16 bg-gray-50 flex items-center justify-center border border-gray-100 p-2 overflow-hidden"
+                  >
                     <img
-                      class="h-10 w-10 rounded-lg object-cover bg-gray-100"
+                      class="h-full w-full object-contain"
                       :src="
                         product.image_url ||
                         'https://placehold.co/100?text=Barang'
@@ -270,17 +283,23 @@ const handleDelete = async (id: string) => {
                       alt=""
                     />
                   </div>
-                  <div class="ml-4">
-                    <div class="text-sm font-bold text-gray-900">
+                  <div>
+                    <div
+                      class="text-base font-bold text-gray-900 tracking-tight"
+                    >
                       {{ product.name }}
+                    </div>
+                    <div
+                      class="text-[10px] text-gray-900 uppercase font-bold tracking-widest mt-1"
+                    >
+                      SKU: #{{ product.id.slice(0, 8).toUpperCase() }}
                     </div>
                   </div>
                 </div>
               </td>
-              <!-- Kategori -->
-              <td class="px-6 py-4 whitespace-nowrap">
+              <td class="px-10 py-8 whitespace-nowrap">
                 <span
-                  class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800"
+                  class="text-xs font-bold text-[#FF5A00] bg-orange-50 px-3 py-1 uppercase tracking-widest"
                 >
                   {{
                     product.category?.name ||
@@ -288,9 +307,8 @@ const handleDelete = async (id: string) => {
                   }}
                 </span>
               </td>
-              <!-- Harga -->
               <td
-                class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium"
+                class="px-10 py-8 whitespace-nowrap text-sm text-gray-900 font-bold"
               >
                 {{
                   new Intl.NumberFormat("id-ID", {
@@ -300,42 +318,34 @@ const handleDelete = async (id: string) => {
                   }).format(product.price)
                 }}
               </td>
-              <!-- Stok -->
               <td
-                class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold"
-                :class="product.stock <= 5 ? 'text-red-500' : 'text-gray-700'"
+                class="px-10 py-8 whitespace-nowrap text-center text-sm font-bold"
+                :class="product.stock <= 5 ? 'text-red-500' : 'text-gray-900'"
               >
                 {{ product.stock || 0 }}
               </td>
-              <!-- Status -->
-              <td class="px-6 py-4 whitespace-nowrap text-center">
-                <span
-                  v-if="product.is_active"
-                  class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded text-green-800 bg-green-100"
-                  >Aktif</span
-                >
-                <span
-                  v-else
-                  class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded text-gray-800 bg-gray-200"
-                  >Non-aktif</span
-                >
+              <td class="px-10 py-8 whitespace-nowrap text-center">
+                <div class="flex justify-center">
+                  <div
+                    class="w-2 h-2 rounded-full"
+                    :class="product.is_active ? 'bg-green-500' : 'bg-gray-300'"
+                    :title="product.is_active ? 'Active' : 'Inactive'"
+                  ></div>
+                </div>
               </td>
-              <!-- Aksi -->
-              <td
-                class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
-              >
-                <div class="flex items-center justify-center gap-2">
+              <td class="px-10 py-8 whitespace-nowrap text-right">
+                <div class="flex items-center justify-end gap-3">
                   <button
                     @click="openEditModal(product)"
-                    class="text-blue-600 hover:text-blue-900 bg-blue-50 p-2 rounded-lg transition"
+                    class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200"
                     title="Edit"
                   >
-                    <Icon name="uil:edit" class="text-lg" />
+                    <Icon name="uil:pen" class="text-lg" />
                   </button>
                   <button
                     @click="handleDelete(product.id)"
-                    class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-lg transition"
-                    title="Hapus"
+                    class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+                    title="Delete"
                   >
                     <Icon name="uil:trash-alt" class="text-lg" />
                   </button>
@@ -346,261 +356,227 @@ const handleDelete = async (id: string) => {
         </table>
       </div>
     </div>
-
-    <!-- Product Modal -->
     <div
       v-if="isModalOpen"
-      class="fixed inset-0 z-100 overflow-y-auto"
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
+      class="fixed inset-0 z-100 flex items-center justify-center p-4 sm:p-6"
     >
       <div
-        class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+        class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        @click="closeModal"
+      ></div>
+      <div
+        class="relative bg-white shadow-2xl w-full max-w-2xl overflow-hidden border border-gray-100 flex flex-col max-h-[90vh]"
       >
-        <!-- Background overlay -->
-        <div
-          class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
-          @click="closeModal"
-          aria-hidden="true"
-        ></div>
-
-        <span
-          class="hidden sm:inline-block sm:align-middle sm:h-screen"
-          aria-hidden="true"
-          >&#8203;</span
-        >
-
-        <div
-          class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full border border-gray-100"
-        >
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div
-                class="mx-auto shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
-                :class="
-                  isEditing
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-green-100 text-green-600'
-                "
+        <div class="absolute top-0 left-0 w-1.5 h-full bg-[#FF5A00]"></div>
+        <div class="p-12 overflow-y-auto">
+          <div class="mb-12">
+            <h3 class="text-4xl font-light text-gray-900 italic">
+              {{ isEditing ? "Edit" : "Add" }}
+              <span class="font-bold not-italic">Item.</span>
+            </h3>
+            <p
+              class="text-gray-400 mt-2 text-xs font-bold uppercase tracking-widest"
+            >
+              {{
+                isEditing
+                  ? "Update existing product metadata"
+                  : "Introduce a new innovative product"
+              }}
+            </p>
+          </div>
+          <form @submit.prevent="handleSubmit" class="space-y-10">
+            <div class="space-y-4">
+              <label
+                class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                >Product Visual</label
               >
-                <Icon
-                  :name="isEditing ? 'uil:edit' : 'uil:plus'"
-                  class="text-2xl"
-                />
-              </div>
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <h3
-                  class="text-xl leading-6 font-bold text-gray-900"
-                  id="modal-title"
+              <div class="flex items-center gap-8">
+                <div
+                  class="w-32 h-32 bg-gray-50 flex items-center justify-center border border-gray-100 p-2 overflow-hidden shrink-0"
                 >
-                  {{ isEditing ? "Edit Produk" : "Tambah Produk Baru" }}
-                </h3>
-
-                <form @submit.prevent="handleSubmit" class="mt-6 space-y-4">
-                  <!-- Image Upload -->
-                  <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1"
-                      >Foto Produk</label
-                    >
-                    <div class="flex items-center gap-4">
-                      <!-- Image Preview -->
-                      <div
-                        class="w-16 h-16 rounded-lg border border-gray-200 overflow-hidden bg-gray-50 shrink-0 flex items-center justify-center"
-                      >
-                        <img
-                          v-if="form.image_url"
-                          :src="form.image_url"
-                          class="w-full h-full object-cover"
-                        />
-                        <Icon
-                          v-else
-                          name="uil:image-upload"
-                          class="text-gray-400 text-2xl"
-                        />
-                      </div>
-
-                      <div class="relative grow">
-                        <input
-                          type="file"
-                          accept="image/*"
-                          @change="handleFileUpload"
-                          :disabled="uploadingImage"
-                          class="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                        />
-                        <div
-                          class="flex items-center justify-center w-full px-4 py-3 bg-gray-50 border border-gray-300 border-dashed rounded-lg hover:bg-gray-100 hover:border-blue-400 transition"
-                          :class="{ 'opacity-50': uploadingImage }"
-                        >
-                          <div class="flex flex-col items-center">
-                            <span class="text-sm font-medium text-gray-700">
-                              <Icon
-                                v-if="uploadingImage"
-                                name="svg-spinners:180-ring"
-                                class="mr-1"
-                              />
-                              {{
-                                uploadingImage
-                                  ? "Mengupload ke Cloudinary..."
-                                  : form.image_url
-                                    ? "Ganti Foto"
-                                    : "Pilih File Gambar"
-                              }}
-                            </span>
-                            <span
-                              class="text-xs text-gray-400 mt-1"
-                              v-if="!uploadingImage"
-                              >PNG, JPG, WEBP maks 2MB</span
-                            >
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Name -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700"
-                      >Nama Produk</label
-                    >
-                    <input
-                      v-model="form.name"
-                      type="text"
-                      required
-                      class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition"
-                      placeholder="Cth: Mouse Gaming"
+                  <img
+                    v-if="form.image_url"
+                    :src="form.image_url"
+                    class="w-full h-full object-contain"
+                  />
+                  <Icon
+                    v-else
+                    name="uil:image-v"
+                    class="text-gray-200 text-4xl"
+                  />
+                </div>
+                <div class="relative grow h-32">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    @change="handleFileUpload"
+                    :disabled="uploadingImage"
+                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  />
+                  <div
+                    class="h-full border border-gray-100 border-dashed flex flex-col items-center justify-center group hover:border-[#FF5A00] bg-gray-50/50 hover:bg-white transition-all duration-300"
+                  >
+                    <Icon
+                      v-if="uploadingImage"
+                      name="svg-spinners:180-ring"
+                      class="text-[#FF5A00] mb-2"
                     />
-                  </div>
-
-                  <!-- Category -->
-                  <div v-show="!isEditing">
-                    <label class="block text-sm font-medium text-gray-700"
-                      >Kategori</label
-                    >
-                    <select
-                      v-model="form.category_id"
-                      :required="!isEditing"
-                      class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition"
-                    >
-                      <option disabled value="">Pilih kategori...</option>
-                      <option
-                        v-for="cat in categories"
-                        :key="cat.id"
-                        :value="cat.id"
-                      >
-                        {{ cat.name }}
-                      </option>
-                    </select>
-                    <p
-                      v-if="categories.length === 0"
-                      class="text-xs text-red-500 mt-1"
-                    >
-                      Harap buat kategori terlebih dahulu sebelum menambah
-                      produk.
-                    </p>
-                  </div>
-
-                  <div class="grid grid-cols-2 gap-4">
-                    <!-- Price -->
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700"
-                        >Harga (Rp)</label
-                      >
-                      <input
-                        v-model.number="form.price"
-                        type="number"
-                        min="0"
-                        required
-                        class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition"
-                      />
-                    </div>
-
-                    <!-- Stock -->
-                    <div>
-                      <label class="block text-sm font-medium text-gray-700"
-                        >Stok Awal</label
-                      >
-                      <input
-                        v-model.number="form.stock"
-                        type="number"
-                        min="0"
-                        required
-                        class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition"
-                      />
-                    </div>
-                  </div>
-
-                  <!-- Description -->
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700"
-                      >Deskripsi Ringkas</label
-                    >
-                    <textarea
-                      v-model="form.description"
-                      rows="3"
-                      class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition resize-none"
-                    ></textarea>
-                  </div>
-
-                  <!-- Active Status Toggle (Only on Edit) -->
-                  <div
-                    v-if="isEditing"
-                    class="flex items-center justify-between bg-gray-50 p-3 rounded-lg border border-gray-200"
-                  >
+                    <Icon
+                      v-else
+                      name="uil:cloud-upload"
+                      class="text-gray-300 group-hover:text-[#FF5A00] transition-colors mb-2 text-2xl"
+                    />
                     <span
-                      class="text-sm font-medium text-gray-700 flex flex-col"
+                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-gray-900"
                     >
-                      Tampilkan di Toko
-                      <span class="text-xs text-gray-400 font-normal"
-                        >Apakah produk ini bisa dibeli pelanggan?</span
-                      >
+                      {{
+                        uploadingImage
+                          ? "Processing Image..."
+                          : "Select Media File"
+                      }}
                     </span>
-                    <label
-                      class="relative inline-flex items-center cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        v-model="form.is_active"
-                        class="sr-only peer"
-                      />
-                      <div
-                        class="w-11 h-6 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"
-                      ></div>
-                    </label>
                   </div>
-
-                  <!-- Actions -->
-                  <div
-                    class="pt-4 border-t border-gray-100 flex justify-end gap-3"
-                  >
-                    <button
-                      type="button"
-                      @click="closeModal"
-                      class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      :disabled="
-                        submitting || (!isEditing && categories.length === 0)
-                      "
-                      class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
-                    >
-                      <Icon
-                        v-if="submitting"
-                        name="svg-spinners:180-ring"
-                        class="mr-2"
-                      />
-                      {{ submitting ? "Menyimpan..." : "Simpan Produk" }}
-                    </button>
-                  </div>
-                </form>
+                </div>
               </div>
             </div>
-          </div>
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                >Product Name</label
+              >
+              <input
+                v-model="form.name"
+                type="text"
+                required
+                class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold"
+                placeholder="Product Identifier"
+              />
+            </div>
+            <div class="grid grid-cols-2 gap-10">
+              <div class="space-y-2" v-show="!isEditing">
+                <label
+                  class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                  >Product Category</label
+                >
+                <select
+                  v-model="form.category_id"
+                  :required="!isEditing"
+                  class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold appearance-none cursor-pointer"
+                >
+                  <option disabled value="">Select Classification...</option>
+                  <option
+                    v-for="cat in categories"
+                    :key="cat.id"
+                    :value="cat.id"
+                  >
+                    {{ cat.name }}
+                  </option>
+                </select>
+              </div>
+              <div class="space-y-2">
+                <label
+                  class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                  >Unit Price (IDR)</label
+                >
+                <input
+                  v-model.number="form.price"
+                  type="number"
+                  min="0"
+                  required
+                  class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold"
+                />
+              </div>
+              <div class="space-y-2">
+                <label
+                  class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                  >Initial Inventory</label
+                >
+                <input
+                  v-model.number="form.stock"
+                  type="number"
+                  min="0"
+                  required
+                  class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold"
+                />
+              </div>
+              <div v-if="isEditing" class="space-y-2">
+                <label
+                  class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                  >Publication State</label
+                >
+                <div
+                  @click="form.is_active = !form.is_active"
+                  class="flex items-center gap-4 cursor-pointer pt-4"
+                >
+                  <div
+                    class="w-12 h-6 bg-gray-100 p-1 transition-colors duration-300"
+                    :class="{ 'bg-orange-100': form.is_active }"
+                  >
+                    <div
+                      class="w-4 h-4 bg-gray-300 transition-all duration-300"
+                      :class="{ 'translate-x-6 bg-[#FF5A00]': form.is_active }"
+                    ></div>
+                  </div>
+                  <span
+                    class="text-xs font-bold uppercase tracking-widest"
+                    :class="form.is_active ? 'text-gray-900' : 'text-gray-400'"
+                  >
+                    {{ form.is_active ? "Public" : "Hidden" }}
+                  </span>
+                </div>
+              </div>
+            </div>
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                >Brief Narrative</label
+              >
+              <textarea
+                v-model="form.description"
+                rows="4"
+                class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 leading-relaxed resize-none"
+                placeholder="Product description and features..."
+              ></textarea>
+            </div>
+            <div class="pt-8 flex justify-end gap-6 items-center">
+              <button
+                type="button"
+                @click="closeModal"
+                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-black transition-colors"
+              >
+                Discard Changes
+              </button>
+              <button
+                type="submit"
+                :disabled="
+                  submitting || (!isEditing && categories.length === 0)
+                "
+                class="bg-black text-white px-10 py-5 text-xs font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-all duration-300 shadow-xl disabled:opacity-50 flex items-center gap-3"
+              >
+                <Icon v-if="submitting" name="svg-spinners:180-ring" />
+                {{
+                  submitting
+                    ? "Processing..."
+                    : isEditing
+                      ? "Commit Updates"
+                      : "Publish Product"
+                }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity 0.3s ease;
+}
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+</style>

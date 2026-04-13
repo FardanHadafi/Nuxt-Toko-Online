@@ -1,14 +1,15 @@
 <script setup lang="ts">
+import { gsap } from "gsap";
 import type { Category, UpdateCategoryRequest } from "~/types";
 
 definePageMeta({
   layout: "admin",
   middleware: "admin",
-  title: "Manajemen Kategori",
+  title: "Schema Management",
 });
 
 useHead({
-  title: "Kelola Kategori | Admin Panel",
+  title: "Categories | Uncover Admin",
 });
 
 const { getCategories, createCategory, updateCategory, deleteCategory } =
@@ -28,6 +29,18 @@ const fetchData = async () => {
   loading.value = true;
   try {
     categories.value = await getCategories();
+
+    if (import.meta.client) {
+      setTimeout(() => {
+        gsap.from(".category-row", {
+          opacity: 0,
+          y: 20,
+          duration: 0.6,
+          stagger: 0.05,
+          ease: "power2.out",
+        });
+      }, 100);
+    }
   } catch (error) {
     console.error("Failed to load categories:", error);
   } finally {
@@ -37,6 +50,14 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
+  if (import.meta.client) {
+    gsap.from(".admin-header", {
+      opacity: 0,
+      x: -30,
+      duration: 1,
+      ease: "power3.out",
+    });
+  }
 });
 
 const openAddModal = () => {
@@ -70,8 +91,7 @@ const handleSubmit = async () => {
     closeModal();
     await fetchData();
   } catch (error: any) {
-    console.error("Submit error:", error);
-    alert("Terjadi kesalahan: " + (error.data?.message || error.message));
+    alert("Error: " + (error.data?.message || error.message));
   } finally {
     submitting.value = false;
   }
@@ -80,126 +100,131 @@ const handleSubmit = async () => {
 const handleDelete = async (id: string) => {
   if (
     confirm(
-      "Apakah Anda yakin ingin menghapus kategori ini? Semua produk di dalamnya mungkin akan kehilangan referensi kategorinya.",
+      "Delete this category? Warning: Products may lose their classification.",
     )
   ) {
     try {
       await deleteCategory(id);
       await fetchData();
     } catch (error: any) {
-      alert(
-        "Gagal menghapus kategori: " + (error.data?.message || error.message),
-      );
+      alert("Error: " + (error.data?.message || error.message));
     }
   }
 };
 </script>
 
 <template>
-  <div class="space-y-6">
-    <!-- Header -->
+  <div class="space-y-12">
     <div
-      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+      class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 admin-header"
     >
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Kategori Produk</h1>
-        <p class="text-gray-500">
-          Kendalikan daftar kategori untuk mempermudah navigasi toko.
+        <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+          Category <span class="font-bold not-italic">Manager</span>
+        </h1>
+        <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">
+          Organize your product classifications for better discovery
         </p>
       </div>
       <button
         @click="openAddModal"
-        class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg flex items-center gap-2 font-medium transition shadow-sm"
+        class="bg-[#FF5A00] text-white px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-black transition-all duration-300 shadow-xl flex items-center gap-3"
       >
-        <Icon name="uil:plus-circle" class="text-xl" />
-        Tambah Kategori
+        <Icon name="uil:plus" class="text-lg" />
+        New Category
       </button>
     </div>
-
-    <!-- Data Table -->
-    <div
-      class="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden"
-    >
-      <div v-if="loading" class="p-12 text-center text-gray-500">
+    <div class="bg-white border border-gray-100 shadow-sm overflow-hidden">
+      <div v-if="loading" class="p-24 text-center">
         <Icon
           name="svg-spinners:180-ring"
-          class="text-4xl text-blue-500 mb-4 inline-block"
+          class="text-4xl text-[#FF5A00] mb-4 inline-block"
         />
-        <p>Memuat kategori...</p>
+        <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+          Accessing Schema...
+        </p>
       </div>
-
       <div
         v-else-if="categories.length === 0"
-        class="p-16 text-center text-gray-500"
+        class="p-24 text-center flex flex-col items-center"
       >
-        <Icon
-          name="uil:apps"
-          class="text-6xl text-gray-300 mb-4 inline-block"
-        />
-        <p class="text-lg font-medium text-gray-800">Tidak ada kategori</p>
-        <p class="text-sm">Silakan buat kategori pertama Anda.</p>
+        <div
+          class="w-20 h-20 bg-gray-50 flex items-center justify-center text-gray-200 mb-6"
+        >
+          <Icon name="uil:apps" class="text-5xl" />
+        </div>
+        <p class="text-xl font-light text-gray-900 italic">
+          No categories <span class="font-bold not-italic">defined.</span>
+        </p>
+        <p class="text-xs text-gray-400 uppercase tracking-widest mt-2">
+          Group your items to provide a seamless browsing experience.
+        </p>
       </div>
 
       <div v-else class="overflow-x-auto">
-        <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
-            <tr>
+        <table class="min-w-full">
+          <thead>
+            <tr class="border-b border-gray-100">
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Nama Kategori
+                Category Name
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-left text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Slug URL
+                Slug Reference
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                ID
+                System ID
               </th>
               <th
-                class="px-6 py-4 border-b border-gray-200 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider"
+                class="px-10 py-6 text-right text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
-                Aksi
+                Actions
               </th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-gray-100">
+          <tbody>
             <tr
               v-for="category in categories"
               :key="category.id"
-              class="hover:bg-gray-50 transition"
+              class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors category-row"
             >
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-bold text-gray-900">
-                  {{ category.name }}
+              <td class="px-10 py-8 whitespace-nowrap">
+                <div class="flex items-center gap-4">
+                  <div class="w-2 h-2 bg-[#FF5A00]"></div>
+                  <div class="text-base font-bold text-gray-900 tracking-tight">
+                    {{ category.name }}
+                  </div>
                 </div>
               </td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                /category/{{ category.slug }}
+              <td class="px-10 py-8 whitespace-nowrap">
+                <code
+                  class="text-xs font-mono text-gray-900 bg-gray-50 px-2 py-1"
+                  >/category/{{ category.slug }}</code
+                >
               </td>
               <td
-                class="px-6 py-4 whitespace-nowrap text-xs text-gray-400 font-mono text-center"
+                class="px-10 py-8 whitespace-nowrap text-[10px] text-gray-900 font-mono text-center tracking-widest"
               >
-                {{ category.id.split("-")[0] }}...
+                {{ category.id.toUpperCase() }}
               </td>
-              <td
-                class="px-6 py-4 whitespace-nowrap text-center text-sm font-medium"
-              >
-                <div class="flex items-center justify-center gap-2">
+              <td class="px-10 py-8 whitespace-nowrap text-right">
+                <div class="flex items-center justify-end gap-3">
                   <button
                     @click="openEditModal(category)"
-                    class="text-blue-600 hover:text-blue-900 bg-blue-50 p-2 rounded-lg transition"
+                    class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-black hover:bg-gray-100 transition-all border border-transparent hover:border-gray-200"
                     title="Edit"
                   >
-                    <Icon name="uil:edit" class="text-lg" />
+                    <Icon name="uil:pen" class="text-lg" />
                   </button>
                   <button
                     @click="handleDelete(category.id)"
-                    class="text-red-600 hover:text-red-900 bg-red-50 p-2 rounded-lg transition"
-                    title="Hapus"
+                    class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 transition-all border border-transparent hover:border-red-100"
+                    title="Delete"
                   >
                     <Icon name="uil:trash-alt" class="text-lg" />
                   </button>
@@ -210,96 +235,71 @@ const handleDelete = async (id: string) => {
         </table>
       </div>
     </div>
-
-    <!-- Modal -->
     <div
       v-if="isModalOpen"
-      class="fixed inset-0 z-100 overflow-y-auto"
-      aria-labelledby="modal-title"
-      role="dialog"
-      aria-modal="true"
+      class="fixed inset-0 z-100 flex items-center justify-center p-4"
     >
       <div
-        class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0"
+        class="absolute inset-0 bg-black/40 backdrop-blur-sm transition-opacity"
+        @click="closeModal"
+      ></div>
+
+      <div
+        class="relative bg-white shadow-2xl w-full max-w-lg overflow-hidden border border-gray-100"
       >
-        <div
-          class="fixed inset-0 bg-gray-900/50 backdrop-blur-sm transition-opacity"
-          @click="closeModal"
-          aria-hidden="true"
-        ></div>
-        <span
-          class="hidden sm:inline-block sm:align-middle sm:h-screen"
-          aria-hidden="true"
-          >&#8203;</span
-        >
+        <div class="absolute top-0 left-0 w-1.5 h-full bg-[#FF5A00]"></div>
 
-        <div
-          class="relative z-10 inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-md w-full border border-gray-100"
-        >
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-            <div class="sm:flex sm:items-start">
-              <div
-                class="mx-auto shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10"
-                :class="
-                  isEditing
-                    ? 'bg-blue-100 text-blue-600'
-                    : 'bg-green-100 text-green-600'
-                "
-              >
-                <Icon
-                  :name="isEditing ? 'uil:edit' : 'uil:plus'"
-                  class="text-2xl"
-                />
-              </div>
-              <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-                <h3
-                  class="text-xl leading-6 font-bold text-gray-900"
-                  id="modal-title"
-                >
-                  {{ isEditing ? "Edit Kategori" : "Kategori Baru" }}
-                </h3>
-
-                <form @submit.prevent="handleSubmit" class="mt-6 space-y-4">
-                  <div>
-                    <label class="block text-sm font-medium text-gray-700"
-                      >Nama Kategori</label
-                    >
-                    <input
-                      v-model="form.name"
-                      type="text"
-                      required
-                      class="mt-1 block w-full px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition"
-                      placeholder="Cth: Laptops"
-                    />
-                  </div>
-
-                  <div
-                    class="pt-4 border-t border-gray-100 flex justify-end gap-3"
-                  >
-                    <button
-                      type="button"
-                      @click="closeModal"
-                      class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
-                    >
-                      Batal
-                    </button>
-                    <button
-                      type="submit"
-                      :disabled="submitting || !form.name.trim()"
-                      class="px-4 py-2.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center transition"
-                    >
-                      <Icon
-                        v-if="submitting"
-                        name="svg-spinners:180-ring"
-                        class="mr-2"
-                      />
-                      {{ submitting ? "Menyimpan..." : "Simpan Kategori" }}
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </div>
+        <div class="p-12">
+          <div class="mb-12">
+            <h3 class="text-4xl font-light text-gray-900 italic">
+              {{ isEditing ? "Edit" : "New" }} <span class="font-bold not-italic">Category.</span>
+            </h3>
+            <p
+              class="text-gray-400 mt-2 text-xs font-bold uppercase tracking-widest"
+            >
+              {{
+                isEditing
+                  ? "Update classification name"
+                  : "Define a new product segment"
+              }}
+            </p>
           </div>
+
+          <form @submit.prevent="handleSubmit" class="space-y-10">
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                >Display Name</label
+              >
+              <input
+                v-model="form.name"
+                type="text"
+                required
+                class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold"
+                placeholder="e.g., Sustainable Tech"
+              />
+            </div>
+
+            <div
+              class="pt-8 flex justify-end gap-6 items-center border-t border-gray-50"
+            >
+              <button
+                type="button"
+                @click="closeModal"
+                class="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-black transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                :disabled="submitting || !form.name.trim()"
+                class="bg-black text-white px-10 py-5 text-xs font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-all duration-300 shadow-xl disabled:opacity-50 flex items-center gap-3"
+              >
+                <Icon v-if="submitting" name="svg-spinners:180-ring" />
+                {{ submitting ? "Saving..." : "Save Category" }}
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

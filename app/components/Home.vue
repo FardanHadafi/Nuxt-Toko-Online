@@ -90,8 +90,6 @@ onMounted(() => {
           Exploring the tech and design shaping the world of tomorrow
         </p>
       </div>
-
-      <!--Product Grid-->
       <div id="categories" class="w-full max-w-360 px-4 mt-24">
         <div class="grid grid-cols-2 gap-4">
           <NuxtLink
@@ -123,9 +121,10 @@ onMounted(() => {
           </NuxtLink>
         </div>
       </div>
-
-      <!--Popular Products-->
-      <div id="products" class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center popular-header">
+      <div
+        id="products"
+        class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center popular-header"
+      >
         <span
           class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
         >
@@ -138,8 +137,6 @@ onMounted(() => {
         <p class="mt-4 text-gray-500 text-lg leading-relaxed">
           Exploring the tech and design shaping the world of tomorrow.
         </p>
-
-        <!-- Filters -->
         <div class="flex items-center gap-2 mt-24">
           <button
             @click="activeFilter = 'All Items'"
@@ -225,12 +222,12 @@ onMounted(() => {
       </div>
       <div class="w-full max-w-280 px-4 mt-6 popular-cards-container">
         <div class="grid grid-cols-3 gap-2">
-          <div
+          <NuxtLink
             v-for="product in filteredProducts"
             :key="product.name"
+            :to="`/products/${product.slug}`"
             class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer popular-card"
           >
-            <!-- "New" Badge -->
             <div
               v-if="product.new"
               class="absolute top-6 left-6 bg-[#FF5A00] text-white text-xs font-semibold px-2 py-1 z-10"
@@ -261,12 +258,13 @@ onMounted(() => {
                 </p>
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </div>
       </div>
-
-      <!--About Us-->
-      <div id="about" class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center about-text">
+      <div
+        id="about"
+        class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center about-text"
+      >
         <span
           class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
         >

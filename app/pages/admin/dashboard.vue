@@ -1,23 +1,25 @@
 <script setup lang="ts">
+import { gsap } from "gsap";
+
 const { getProducts, getAllOrders } = useApi();
 const stats = ref([
   {
-    name: "Total Produk",
+    name: "Total Products",
     value: "...",
     icon: "uil:package",
-    color: "bg-blue-500",
+    suffix: "Items",
   },
   {
-    name: "Total Pesanan",
+    name: "Orders Received",
     value: "...",
     icon: "uil:shopping-basket",
-    color: "bg-orange-500",
+    suffix: "Orders",
   },
   {
-    name: "Total Pendapatan",
+    name: "Total Revenue",
     value: "...",
     icon: "uil:money-bill",
-    color: "bg-emerald-500",
+    suffix: "IDR",
   },
 ]);
 
@@ -52,6 +54,23 @@ onMounted(async () => {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(totalRevenue);
+
+    // GSAP Animations
+    if (import.meta.client) {
+      gsap.from(".stat-card", {
+        y: 20,
+        opacity: 0.4,
+        duration: 0.5,
+        ease: "power2.out",
+      });
+
+      gsap.from(".dashboard-section", {
+        y: 20,
+        duration: 0.6,
+        delay: 0.1,
+        ease: "power2.out",
+      });
+    }
   } catch (error) {
     console.error("Failed to load stats:", error);
   }
@@ -60,114 +79,124 @@ onMounted(async () => {
 definePageMeta({
   layout: "admin",
   middleware: "admin",
-  title: "Dashboard Ringkasan",
+  title: "Dashboard Overview",
 });
 
 useHead({
-  title: "Admin Dashboard | Toko Online",
+  title: "Dashboard | Uncover Admin",
 });
 </script>
 
 <template>
-  <div class="space-y-8">
-    <!-- Header -->
-    <div>
-      <h1 class="text-2xl font-bold text-gray-800">Selamat Datang, Admin</h1>
-      <p class="text-gray-500">
-        Berikut adalah ringkasan performa toko Anda hari ini.
+  <div class="space-y-12 max-w-7xl">
+    <div class="dashboard-section">
+      <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+        System<span class="font-bold not-italic"> Overview</span>
+      </h1>
+      <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">
+        Performance snapshot for your innovative products
       </p>
     </div>
-
-    <!-- Stats Grid -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-1">
       <div
         v-for="stat in stats"
         :key="stat.name"
-        class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex items-center gap-4 transition hover:shadow-md"
+        class="bg-white p-10 border border-gray-200 shadow-sm flex flex-col justify-between transition-all duration-300 hover:border-[#FF5A00] hover:shadow-md group stat-card"
       >
-        <div
-          :class="[
-            'w-12 h-12 rounded-lg flex items-center justify-center text-white text-2xl shadow-lg',
-            stat.color,
-            `shadow-${stat.color.split('-')[1] || 'blue'}-500/20`,
-          ]"
-        >
-          <Icon :name="stat.icon" />
+        <div class="flex justify-between items-start mb-8">
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-[0.2em]">
+            {{ stat.name }}
+          </p>
+          <div
+            class="w-10 h-10 bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-[#FF5A00]/10 group-hover:text-[#FF5A00] transition-colors"
+          >
+            <Icon :name="stat.icon" class="text-xl" />
+          </div>
         </div>
         <div>
-          <p class="text-sm text-gray-400 font-medium">{{ stat.name }}</p>
-          <p class="text-2xl font-bold text-gray-800">{{ stat.value }}</p>
+          <p class="text-4xl font-light text-gray-900 tracking-tighter">
+            {{ stat.value }}
+          </p>
+          <p
+            class="text-[10px] font-bold text-gray-400 uppercase mt-1 tracking-widest"
+          >
+            {{ stat.suffix }}
+          </p>
         </div>
       </div>
     </div>
-
-    <!-- Quick Actions & Recent Info -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <!-- Quick Actions -->
-      <div class="lg:col-span-1 space-y-6">
-        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-          <h3 class="font-bold text-gray-800 mb-4">Aksi Cepat</h3>
-          <div class="grid grid-cols-1 gap-3">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 dashboard-section">
+      <div class="lg:col-span-4 space-y-6">
+        <div class="bg-white p-10 border border-gray-200 shadow-sm">
+          <h3
+            class="text-xs font-bold text-gray-400 uppercase tracking-[0.2em] mb-8"
+          >
+            Quick Actions
+          </h3>
+          <div class="grid grid-cols-1 gap-1">
             <NuxtLink
               to="/admin/products"
-              class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-blue-200 hover:bg-blue-50 transition group"
+              class="flex items-center justify-between p-6 bg-gray-50 hover:bg-black group transition-all duration-300"
             >
-              <div
-                class="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition"
-              >
-                <Icon name="uil:plus" />
+              <div class="flex items-center gap-4">
+                <Icon name="uil:plus-circle" class="text-xl text-[#FF5A00]" />
+                <span
+                  class="text-sm font-bold text-gray-900 group-hover:text-white transition-colors"
+                  >Add New Product</span
+                >
               </div>
-              <span class="font-medium text-gray-700">Tambah Produk Baru</span>
+              <Icon
+                name="uil:arrow-right"
+                class="text-gray-300 group-hover:text-[#FF5A00] transition-colors"
+              />
             </NuxtLink>
             <NuxtLink
               to="/admin/orders"
-              class="flex items-center gap-3 p-3 rounded-lg border border-gray-100 hover:border-orange-200 hover:bg-orange-50 transition group"
+              class="flex items-center justify-between p-6 bg-gray-50 hover:bg-black group transition-all duration-300"
             >
-              <div
-                class="w-10 h-10 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition"
-              >
-                <Icon name="uil:receipt" />
+              <div class="flex items-center gap-4">
+                <Icon name="uil:invoice" class="text-xl text-[#FF5A00]" />
+                <span
+                  class="text-sm font-bold text-gray-900 group-hover:text-white transition-colors"
+                  >Manage Orders</span
+                >
               </div>
-              <span class="font-medium text-gray-700">Lihat Semua Pesanan</span>
+              <Icon
+                name="uil:arrow-right"
+                class="text-gray-300 group-hover:text-[#FF5A00] transition-colors"
+              />
             </NuxtLink>
           </div>
         </div>
       </div>
-
-      <!-- Welcome Banner -->
-      <div class="lg:col-span-2">
+      <div class="lg:col-span-8">
         <div
-          class="bg-linear-to-br from-blue-600 to-blue-800 rounded-2xl p-8 text-white relative overflow-hidden shadow-xl shadow-blue-500/20"
+          class="bg-white p-12 border border-gray-200 shadow-sm relative overflow-hidden flex flex-col justify-center h-full"
         >
-          <div class="relative z-10 max-w-md">
-            <h2 class="text-3xl font-bold mb-4">
-              Mulai Kelola Inventaris Anda!
-            </h2>
-            <p class="text-blue-100 mb-6 leading-relaxed">
-              Anda dapat menambah, mengubah, atau menghapus produk dengan mudah
-              melalui menu manajemen produk. Jangan lupa untuk selalu memantau
-              stok barang!
-            </p>
-            <NuxtLink
-              to="/admin/products"
-              class="inline-flex items-center gap-2 bg-white text-blue-700 px-6 py-3 rounded-xl font-bold hover:bg-blue-50 transition shadow-lg"
+          <div
+            class="absolute top-0 right-0 w-64 h-64 bg-gray-50 -mr-32 -mt-32 rotate-45"
+          ></div>
+          <div class="relative z-10 max-w-lg">
+            <h2
+              class="text-4xl font-light text-gray-900 tracking-tight leading-tight mb-6"
             >
-              Ke Manajemen Produk
-              <Icon name="uil:arrow-right" />
-            </NuxtLink>
+              Inventory Mastery
+            </h2>
+            <p class="text-gray-400 mb-8 leading-relaxed text-sm tracking-wide">
+              Your dashboard is synced with real-time analytics. Oversee stock
+              levels, review order histories, and keep your innovative
+              storefront optimized for the modern user.
+            </p>
+            <div class="flex gap-4">
+              <NuxtLink
+                to="/admin/products"
+                class="inline-flex items-center gap-3 bg-black text-white px-8 py-4 text-xs font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-colors shadow-xl"
+              >
+                Products Catalog
+                <Icon name="uil:external-link-alt" />
+              </NuxtLink>
+            </div>
           </div>
-
-          <!-- Abstract Background Decor -->
-          <div
-            class="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"
-          ></div>
-          <div
-            class="absolute right-10 top-10 w-40 h-40 bg-blue-400/20 rounded-full blur-2xl"
-          ></div>
-          <Icon
-            name="uil:rocket"
-            class="absolute right-12 bottom-12 text-8xl text-white/10 transform -rotate-12"
-          />
         </div>
       </div>
     </div>

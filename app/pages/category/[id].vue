@@ -74,12 +74,12 @@ onMounted(() => {
           v-if="categoryProducts.length > 0"
           class="grid grid-cols-1 md:grid-cols-3 gap-2"
         >
-          <div
+          <NuxtLink
             v-for="product in categoryProducts"
             :key="product.name"
+            :to="`/products/${product.slug}`"
             class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer category-card"
           >
-            <!-- "New" Badge -->
             <div
               v-if="product.new"
               class="absolute top-6 left-6 bg-[#FF5A00] text-white text-xs font-semibold px-2 py-1 z-10"
@@ -110,9 +110,8 @@ onMounted(() => {
                 </p>
               </div>
             </div>
-          </div>
+          </NuxtLink>
         </div>
-
         <div
           v-else
           class="text-center text-gray-500 py-32 category-card bg-white shadow-sm w-full mx-auto max-w-lg"

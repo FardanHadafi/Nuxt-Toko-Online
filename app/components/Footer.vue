@@ -1,12 +1,8 @@
-<script setup lang="ts"></script>
-
 <template>
   <footer id="contact" class="w-full bg-[#f8f9fa] border-t border-gray-200">
     <div class="max-w-360 mx-auto px-4 py-20">
       <div class="flex flex-col lg:flex-row justify-between gap-16 lg:gap-24">
-        <!-- Left Side -->
         <div class="flex flex-col items-start lg:max-w-sm">
-          <!-- Logo -->
           <div class="flex items-center gap-3">
             <img
               src="/assets/products/Brand-Logo.avif"
@@ -17,21 +13,16 @@
           <p class="text-gray-500 mb-4 max-w-[280px] leading-relaxed text-sm">
             Exploring the tech and design shaping the world of tomorrow.
           </p>
-
           <button
             class="bg-[#111827] text-white px-7 py-3 font-medium text-sm hover:bg-gray-800 transition-colors cursor-pointer lg:mb-16"
           >
             About Us
           </button>
-
           <p class="text-gray-400 text-xs">
             ©2026 Uncover. All rights reserved.
           </p>
         </div>
-
-        <!-- Right Side Nav Links -->
         <div class="flex flex-wrap gap-16 lg:gap-32 w-full lg:w-auto">
-          <!-- Pages -->
           <div class="flex flex-col gap-4 text-sm mt-2 lg:mt-0">
             <h4 class="text-gray-500 mb-2">Pages</h4>
             <NuxtLink
@@ -60,8 +51,6 @@
               >Contact</NuxtLink
             >
           </div>
-
-          <!-- Categories -->
           <div class="flex flex-col gap-4 text-sm mt-2 lg:mt-0">
             <h4 class="text-gray-500 mb-2">Categories</h4>
             <NuxtLink
@@ -85,8 +74,6 @@
               >Best Sellers</NuxtLink
             >
           </div>
-
-          <!-- Socials -->
           <div class="flex flex-col gap-4 text-sm mt-2 lg:mt-0">
             <h4 class="text-gray-500 mb-2">Socials</h4>
             <NuxtLink

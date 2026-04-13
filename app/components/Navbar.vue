@@ -13,21 +13,19 @@
       <nav
         class="hidden md:flex items-center gap-8 text-sm font-medium text-gray-500"
       >
-        <NuxtLink to="/" class="hover:text-gray-900 transition-colors"
+        <NuxtLink to="#home" class="hover:text-gray-900 transition-colors"
           >Home</NuxtLink
         >
-        <NuxtLink to="/products" class="hover:text-gray-900 transition-colors"
+        <NuxtLink to="#categories" class="hover:text-gray-900 transition-colors"
           >Categories</NuxtLink
         >
-        <NuxtLink
-          to="/testimonial"
-          class="hover:text-gray-900 transition-colors"
+        <NuxtLink to="#products" class="hover:text-gray-900 transition-colors"
           >Products</NuxtLink
         >
-        <NuxtLink to="/about" class="hover:text-gray-900 transition-colors"
+        <NuxtLink to="#about" class="hover:text-gray-900 transition-colors"
           >About</NuxtLink
         >
-        <NuxtLink to="/about" class="hover:text-gray-900 transition-colors"
+        <NuxtLink to="#contact" class="hover:text-gray-900 transition-colors"
           >Contact</NuxtLink
         >
       </nav>

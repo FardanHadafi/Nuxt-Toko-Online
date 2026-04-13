@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { productGrid, popularProducts } from "../data/products";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const activeFilter = ref("All Items");
 const filteredProducts = computed(() => {
@@ -11,18 +13,78 @@ const filteredProducts = computed(() => {
   }
   return popularProducts;
 });
+
+onMounted(() => {
+  if (import.meta.client) {
+    gsap.registerPlugin(ScrollTrigger);
+
+    gsap.from(".hero-content", {
+      y: 60,
+      opacity: 0,
+      duration: 1.2,
+      ease: "power3.out",
+    });
+
+    gsap.from(".product-grid-item", {
+      scrollTrigger: {
+        trigger: "#categories",
+        start: "top 80%",
+      },
+      y: 40,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.15,
+      ease: "power2.out",
+    });
+
+    gsap.from(".popular-header", {
+      scrollTrigger: {
+        trigger: "#products",
+        start: "top 85%",
+      },
+      y: 40,
+      opacity: 0,
+      duration: 1,
+      ease: "power2.out",
+    });
+
+    gsap.from(".popular-card", {
+      scrollTrigger: {
+        trigger: ".popular-cards-container",
+        start: "top 80%",
+      },
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: "back.out(1.4)",
+    });
+
+    gsap.from(".about-text", {
+      scrollTrigger: {
+        trigger: "#about",
+        start: "top 85%",
+      },
+      y: 50,
+      opacity: 0,
+      duration: 0.8,
+      stagger: 0.1,
+      ease: "power2.out",
+    });
+  }
+});
 </script>
 
 <template>
   <div>
-    <Navbar />
     <main
+      id="home"
       class="min-h-screen bg-gray-100 pt-36 flex flex-col items-center pb-24"
     >
-      <div class="text-center max-w-xl px-4">
-        <h1 class="font-semibold text-5xl leading-tight tracking-tight">
+      <div class="text-center max-w-xl px-4 hero-content">
+        <h1 class="font-light text-6xl leading-tight tracking-tight">
           Uncover
-          <span class="text-orange-400">The Most</span> Innovative Products.
+          <span class="text-orange-500">The Most</span> Innovative Products.
         </h1>
         <p class="mt-4 text-gray-500 text-lg leading-relaxed">
           Exploring the tech and design shaping the world of tomorrow
@@ -30,12 +92,12 @@ const filteredProducts = computed(() => {
       </div>
 
       <!--Product Grid-->
-      <div class="w-full max-w-360 px-4 mt-24">
+      <div id="categories" class="w-full max-w-360 px-4 mt-24">
         <div class="grid grid-cols-2 gap-4">
           <div
             v-for="product in productGrid"
             :key="product.category"
-            class="group cursor-pointer bg-white"
+            class="group cursor-pointer bg-white product-grid-item"
           >
             <div class="overflow-hidden bg-[#f0f0f0]">
               <img
@@ -62,13 +124,13 @@ const filteredProducts = computed(() => {
       </div>
 
       <!--Popular Products-->
-      <div class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center">
+      <div id="products" class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center popular-header">
         <span
           class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
         >
           Popular Products
         </span>
-        <h1 class="font-semibold text-6xl leading-tight tracking-tight">
+        <h1 class="font-light text-6xl leading-tight tracking-tight">
           Check Out The
           <span class="text-orange-500">Most Popular</span> Pieces.
         </h1>
@@ -160,12 +222,12 @@ const filteredProducts = computed(() => {
           </button>
         </div>
       </div>
-      <div class="w-full max-w-280 px-4 mt-6">
+      <div class="w-full max-w-280 px-4 mt-6 popular-cards-container">
         <div class="grid grid-cols-3 gap-2">
           <div
             v-for="product in filteredProducts"
             :key="product.name"
-            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer"
+            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer popular-card"
           >
             <!-- "New" Badge -->
             <div
@@ -203,13 +265,13 @@ const filteredProducts = computed(() => {
       </div>
 
       <!--About Us-->
-      <div class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center">
+      <div id="about" class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center about-text">
         <span
           class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
         >
           About Us
         </span>
-        <h1 class="font-semibold text-6xl leading-tight tracking-tight">
+        <h1 class="font-light text-6xl leading-tight tracking-tight">
           Learn More <span class="text-orange-500">About Us</span>
         </h1>
         <p class="mt-4 text-gray-500 text-lg leading-relaxed">
@@ -245,7 +307,7 @@ const filteredProducts = computed(() => {
             </p>
           </div>
           <div
-            class="col-span-4 md:col-span-2 bg-white px-10 py-6 flex flex-col justify-center group cursor-default"
+            class="col-span-4 md:col-span-2 bg-white px-10 py-6 flex flex-col justify-center group cursor-default about-text"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -270,7 +332,7 @@ const filteredProducts = computed(() => {
             </p>
           </div>
           <div
-            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group"
+            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group about-text"
           >
             <h2
               class="text-3xl font-semibold text-orange-500 mb-2 group-hover:scale-105 transition-transform origin-left"
@@ -280,7 +342,7 @@ const filteredProducts = computed(() => {
             <p class="text-sm text-gray-500">Official Partners</p>
           </div>
           <div
-            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group"
+            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group about-text"
           >
             <h2
               class="text-3xl font-semibold text-orange-500 mb-2 group-hover:scale-105 transition-transform origin-left"
@@ -290,7 +352,7 @@ const filteredProducts = computed(() => {
             <p class="text-sm text-gray-500">Community Members</p>
           </div>
           <div
-            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group"
+            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group about-text"
           >
             <h2
               class="text-3xl font-semibold text-orange-500 mb-2 group-hover:scale-105 transition-transform origin-left"
@@ -300,7 +362,7 @@ const filteredProducts = computed(() => {
             <p class="text-sm text-gray-500">Orders This Month</p>
           </div>
           <div
-            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group"
+            class="col-span-2 md:col-span-1 bg-white p-6 cursor-default group about-text"
           >
             <h2
               class="text-3xl font-semibold text-orange-500 mb-2 group-hover:scale-105 transition-transform origin-left"

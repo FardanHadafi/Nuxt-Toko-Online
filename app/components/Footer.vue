@@ -1,7 +1,7 @@
 <script setup lang="ts"></script>
 
 <template>
-  <footer class="w-full bg-[#f8f9fa] border-t border-gray-200">
+  <footer id="contact" class="w-full bg-[#f8f9fa] border-t border-gray-200">
     <div class="max-w-360 mx-auto px-4 py-20">
       <div class="flex flex-col lg:flex-row justify-between gap-16 lg:gap-24">
         <!-- Left Side -->

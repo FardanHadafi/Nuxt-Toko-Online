@@ -65,13 +65,7 @@ const addToCart = () => {
           In Stock
         </span>
         <span class="text-zinc-600 font-medium text-sm">
-          {{
-            new Intl.NumberFormat("id-ID", {
-              style: "currency",
-              currency: "IDR",
-              minimumFractionDigits: 0,
-            }).format(product.price)
-          }}
+          Rp {{ new Intl.NumberFormat('id-ID').format(product.price) }}
         </span>
       </div>
     </div>

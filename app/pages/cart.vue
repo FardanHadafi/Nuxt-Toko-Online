@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { popularProducts } from "../data/products";
+
 const cartStore = useCartStore();
 const { getProducts, checkoutOrder } = useApi();
 
@@ -7,13 +9,31 @@ const { data: allProducts } = await useAsyncData("products-cart", () =>
 );
 
 const cartItems = computed(() => {
-  if (!allProducts.value) return [];
   return cartStore.items
     .map((item) => {
-      const product = allProducts.value?.find((p) => p.id === item.product_id);
+      let productData = allProducts.value?.find(
+        (p) => p.id === item.product_id,
+      );
+      if (!productData) {
+        const mockProduct = popularProducts.find(
+          (p) => p.id === item.product_id,
+        );
+        if (mockProduct) {
+          productData = {
+            id: mockProduct.id,
+            name: mockProduct.name,
+            price: mockProduct.price,
+            stock: 99,
+            image_url: mockProduct.img,
+            is_active: true,
+            slug: mockProduct.slug,
+          } as any;
+        }
+      }
+
       return {
         ...item,
-        product,
+        product: productData,
       };
     })
     .filter((item) => item.product);
@@ -162,241 +182,276 @@ const goToWhatsApp = () => {
 </script>
 
 <template>
-  <div class="container mx-auto px-4 py-12 max-w-5xl">
-    <h1 class="text-3xl font-bold text-gray-800 mb-8">Keranjang Belanja</h1>
-    <div
-      v-if="checkoutSuccess && paymentStatus === 'paid'"
-      class="bg-white rounded-2xl shadow-xl p-8 text-center border border-green-100 mb-8"
-    >
+  <div class="min-h-screen bg-white pt-32 pb-48">
+    <div class="container mx-auto px-6 max-w-6xl">
+      <div class="mb-16">
+        <h1 class="text-6xl font-bold text-zinc-950 tracking-tighter mb-4">
+          Shopping <span class="text-zinc-400">Bag</span>
+        </h1>
+        <p class="text-zinc-500 text-lg max-w-xl">
+          Review your selected items and provide delivery information to
+          complete your order.
+        </p>
+      </div>
       <div
-        class="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center mx-auto mb-6"
+        v-if="checkoutSuccess && paymentStatus === 'paid'"
+        class="bg-zinc-50 p-12 text-center border border-zinc-100 mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700"
       >
-        <Icon name="uil:check" class="text-5xl" />
-      </div>
-      <h2 class="text-2xl font-bold text-gray-800">Pembayaran Berhasil!</h2>
-      <p class="text-gray-500 mt-2 mb-8">
-        Terima kasih {{ orderData?.customer_name }}. Pesanan
-        <b>#{{ orderData?.order_number }}</b> telah dibayar. Silakan konfirmasi
-        melalui WhatsApp agar pesanan segera diproses.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <button
-          @click="goToWhatsApp"
-          class="flex items-center justify-center gap-2 px-8 py-3 bg-green-500 text-white rounded-xl font-bold hover:bg-green-600 transition shadow-lg shadow-green-200"
-        >
-          <Icon name="uil:whatsapp" class="text-2xl" />
-          Konfirmasi via WhatsApp
-        </button>
-        <button
-          @click="clearPendingOrder()"
-          class="flex items-center justify-center gap-2 px-8 py-3 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition"
-        >
-          Tutup
-        </button>
-      </div>
-    </div>
-    <div
-      v-if="checkoutSuccess && paymentStatus !== 'paid'"
-      class="bg-yellow-50 rounded-2xl shadow-md p-6 border border-yellow-200 mb-8"
-    >
-      <div class="flex flex-col sm:flex-row items-center gap-4">
         <div
-          class="w-14 h-14 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center shrink-0"
+          class="w-24 h-24 bg-zinc-900 text-white rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl"
         >
-          <Icon name="uil:clock" class="text-3xl" />
+          <Icon name="uil:check" class="text-5xl" />
         </div>
-        <div class="flex-1 text-center sm:text-left">
-          <h3 class="font-bold text-gray-800 text-lg">
-            Pesanan Menunggu Pembayaran
-          </h3>
-          <p class="text-gray-500 text-sm">
-            Pesanan <b>#{{ orderData?.order_number }}</b> belum dibayar.
-            Selesaikan pembayaran atau batalkan.
-          </p>
-        </div>
-        <div class="flex gap-3 shrink-0">
+        <h2 class="text-4xl font-bold text-zinc-950 tracking-tight mb-4">
+          Payment Received
+        </h2>
+        <p class="text-zinc-500 text-lg mb-10 max-w-lg mx-auto">
+          Thank you, {{ orderData?.customer_name }}. Your order
+          <b>#{{ orderData?.order_number }}</b> is being processed. Confirm via
+          WhatsApp for immediate priority.
+        </p>
+        <div class="flex flex-col sm:flex-row gap-4 justify-center">
           <button
-            v-if="orderData?.snap_token"
-            @click="resumePayment"
-            class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition text-sm"
+            @click="goToWhatsApp"
+            class="flex items-center justify-center gap-3 px-10 py-5 bg-zinc-950 text-white font-bold uppercase tracking-widest hover:bg-zinc-800 transition-all shadow-lg active:scale-95"
           >
-            <Icon name="uil:credit-card" class="text-lg" />
-            Lanjutkan Bayar
+            <Icon name="uil:whatsapp" class="text-2xl" />
+            WhatsApp Confirmation
           </button>
           <button
             @click="clearPendingOrder()"
-            class="flex items-center gap-2 px-5 py-2.5 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition text-sm"
+            class="flex items-center justify-center gap-3 px-10 py-5 bg-white text-zinc-950 border border-zinc-200 font-bold uppercase tracking-widest hover:bg-zinc-50 transition-all active:scale-95"
           >
-            Batalkan
+            Done
           </button>
-        </div>
-      </div>
-    </div>
-    <div
-      v-if="cartItems.length > 0"
-      class="grid grid-cols-1 lg:grid-cols-3 gap-8"
-    >
-      <div class="lg:col-span-2 space-y-4">
-        <div
-          v-for="item in cartItems"
-          :key="item.product_id"
-          class="flex items-center gap-4 bg-white p-4 rounded-xl shadow-sm border border-gray-100"
-        >
-          <img
-            :src="
-              item.product?.image_url ||
-              'https://placehold.co/100x100?text=Product'
-            "
-            class="w-20 h-20 object-cover rounded-lg"
-          />
-          <div class="flex-1">
-            <h3 class="font-bold text-gray-800">{{ item.product?.name }}</h3>
-            <p class="text-blue-600 font-medium">
-              {{
-                new Intl.NumberFormat("id-ID", {
-                  style: "currency",
-                  currency: "IDR",
-                  minimumFractionDigits: 0,
-                }).format(item.product?.price || 0)
-              }}
-            </p>
-            <p
-              class="text-xs"
-              :class="
-                (item.product?.stock ?? 0) - item.quantity <= 3
-                  ? 'text-red-500'
-                  : 'text-gray-400'
-              "
-            >
-              Sisa stok: {{ (item.product?.stock ?? 0) - item.quantity }}
-            </p>
-          </div>
-          <div class="flex items-center gap-3">
-            <button
-              @click="cartStore.addItem(item.product_id, -1)"
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
-              :disabled="item.quantity <= 1"
-            >
-              <Icon name="uil:minus" />
-            </button>
-            <span class="font-bold w-6 text-center">{{ item.quantity }}</span>
-            <button
-              @click="cartStore.addItem(item.product_id, 1)"
-              class="w-8 h-8 flex items-center justify-center rounded-full border border-gray-200 hover:bg-gray-50 transition disabled:opacity-30 disabled:cursor-not-allowed"
-              :disabled="item.quantity >= (item.product?.stock ?? 0)"
-            >
-              <Icon name="uil:plus" />
-            </button>
-            <button
-              @click="cartStore.removeItem(item.product_id)"
-              class="ml-2 text-red-500 hover:text-red-600 p-2"
-            >
-              <Icon name="uil:trash-alt" class="text-xl" />
-            </button>
-          </div>
-        </div>
-
-        <div
-          class="p-6 bg-blue-50 rounded-xl border border-blue-100 flex justify-between items-center"
-        >
-          <span class="text-blue-800 font-medium">Total Pembayaran</span>
-          <span class="text-2xl font-bold text-blue-600">
-            {{
-              new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                minimumFractionDigits: 0,
-              }).format(totalPrice)
-            }}
-          </span>
         </div>
       </div>
       <div
-        class="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 h-fit sticky top-24"
+        v-if="checkoutSuccess && paymentStatus !== 'paid'"
+        class="bg-zinc-950 text-white p-8 border border-zinc-800 mb-16 flex flex-col md:flex-row items-center justify-between gap-8 animate-in fade-in duration-500"
       >
-        <h2 class="text-xl font-bold text-gray-800 mb-6">
-          Informasi Pengiriman
-        </h2>
-        <form @submit.prevent="handleCheckout" class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Nama Lengkap</label
-            >
-            <input
-              v-model="formData.customer_name"
-              type="text"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="Budi Santoso"
-            />
+        <div class="flex items-center gap-6">
+          <div
+            class="w-16 h-16 bg-zinc-800 flex items-center justify-center shrink-0"
+          >
+            <Icon name="uil:clock" class="text-3xl text-orange-500" />
           </div>
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Email</label
-            >
-            <input
-              v-model="formData.customer_email"
-              type="email"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="budi@example.com"
-            />
+            <h3 class="font-bold text-xl tracking-tight">Pending Payment</h3>
+            <p class="text-zinc-400 text-sm mt-1">
+              Order #{{ orderData?.order_number }} is waiting for payment.
+            </p>
           </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >No. WhatsApp</label
-            >
-            <input
-              v-model="formData.customer_phone"
-              type="tel"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-              placeholder="08123456789"
-            />
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1"
-              >Alamat Lengkap</label
-            >
-            <textarea
-              v-model="formData.shipping_address"
-              required
-              class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none h-24"
-              placeholder="Jl. Merdeka No. 123, Jakarta"
-            ></textarea>
-          </div>
-
+        </div>
+        <div class="flex gap-4 w-full md:w-auto">
           <button
-            type="submit"
-            :disabled="loading"
-            class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg hover:bg-blue-700 transition shadow-lg shadow-blue-200 flex items-center justify-center gap-2"
+            v-if="orderData?.snap_token"
+            @click="resumePayment"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-orange-600 text-white font-bold uppercase tracking-widest text-xs hover:bg-orange-500 transition-all"
           >
-            <Icon v-if="loading" name="svg-spinners:180-ring" />
-            {{ loading ? "Memproses..." : "Checkout Sekarang" }}
+            Pay Now
           </button>
-          <p
-            class="text-[10px] text-gray-400 text-center mt-4 uppercase tracking-widest font-bold"
+          <button
+            @click="clearPendingOrder()"
+            class="flex-1 md:flex-none flex items-center justify-center gap-2 px-8 py-4 bg-zinc-800 text-zinc-400 font-bold uppercase tracking-widest text-xs hover:text-white transition-all"
           >
-            Secure Payment by Midtrans
-          </p>
-        </form>
+            Cancel
+          </button>
+        </div>
       </div>
-    </div>
-    <div
-      v-else-if="!checkoutSuccess"
-      class="text-center py-24 bg-white rounded-2xl border border-gray-100 shadow-sm"
-    >
-      <Icon name="uil:shopping-cart" class="text-7xl text-gray-200 mb-4" />
-      <h2 class="text-2xl font-bold text-gray-800">Keranjang Anda Kosong</h2>
-      <p class="text-gray-500 mt-2 mb-8">
-        Pilih produk favorit Anda terlebih dahulu.
-      </p>
-      <NuxtLink
-        to="/"
-        class="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition"
+      <div
+        v-if="cartItems.length > 0"
+        class="grid grid-cols-1 lg:grid-cols-12 gap-16"
       >
-        Lihat Produk
-      </NuxtLink>
+        <div class="lg:col-span-7 space-y-8">
+          <div
+            v-for="item in cartItems"
+            :key="item.product_id"
+            class="flex flex-col sm:flex-row items-center gap-8 group pb-8 border-b border-zinc-100"
+          >
+            <div
+              class="w-40 h-40 bg-zinc-50 p-6 flex items-center justify-center shrink-0 overflow-hidden relative"
+            >
+              <img
+                :src="
+                  item.product?.image_url ||
+                  'https://placehold.co/400x400?text=Product'
+                "
+                class="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110"
+              />
+            </div>
+            <div class="flex-1 w-full text-center sm:text-left">
+              <div
+                class="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2"
+              >
+                <h3 class="font-bold text-2xl text-zinc-950 tracking-tight">
+                  {{ item.product?.name }}
+                </h3>
+                <button
+                  @click="cartStore.removeItem(item.product_id)"
+                  class="text-zinc-300 hover:text-red-500 transition-colors hidden sm:block"
+                >
+                  <Icon name="uil:trash-alt" class="text-xl" />
+                </button>
+              </div>
+              <p class="text-zinc-500 text-lg mb-6">
+                Rp {{ new Intl.NumberFormat('id-ID').format(item.product?.price || 0) }}
+              </p>
+              <div
+                class="flex items-center justify-center sm:justify-start gap-6"
+              >
+                <div
+                  class="flex items-center bg-zinc-50 border border-zinc-100 overflow-hidden"
+                >
+                  <button
+                    @click="cartStore.addItem(item.product_id, -1)"
+                    class="w-12 h-12 flex items-center justify-center hover:bg-zinc-200 transition-colors disabled:opacity-20"
+                    :disabled="item.quantity <= 1"
+                  >
+                    <Icon name="uil:minus" />
+                  </button>
+                  <span
+                    class="font-bold w-12 text-center text-zinc-900 border-x border-zinc-100"
+                    >{{ item.quantity }}</span
+                  >
+                  <button
+                    @click="cartStore.addItem(item.product_id, 1)"
+                    class="w-12 h-12 flex items-center justify-center hover:bg-zinc-200 transition-colors disabled:opacity-20"
+                    :disabled="item.quantity >= (item.product?.stock ?? 0)"
+                  >
+                    <Icon name="uil:plus" />
+                  </button>
+                </div>
+                <button
+                  @click="cartStore.removeItem(item.product_id)"
+                  class="text-zinc-400 hover:text-red-500 transition-colors sm:hidden"
+                >
+                  <Icon name="uil:trash-alt" class="text-xl" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="pt-8 flex flex-col gap-6">
+            <div
+              class="flex justify-between items-center text-zinc-400 uppercase tracking-widest text-xs font-bold"
+            >
+              <span>Subtotal</span>
+              <span>Rp {{ new Intl.NumberFormat('id-ID').format(totalPrice) }}</span>
+            </div>
+            <div
+              class="flex justify-between items-center text-zinc-400 uppercase tracking-widest text-xs font-bold"
+            >
+              <span>Shipping</span>
+              <span class="text-green-600">Free</span>
+            </div>
+            <div class="h-px bg-zinc-950 w-full"></div>
+            <div class="flex justify-between items-end">
+              <span class="text-zinc-500 font-medium">Total Amount</span>
+              <span class="text-5xl font-bold text-zinc-950 tracking-tighter">
+                Rp {{ new Intl.NumberFormat('id-ID').format(totalPrice) }}
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="lg:col-span-5 h-fit sticky top-32">
+          <div class="bg-zinc-50 p-10 border border-zinc-100">
+            <h2 class="text-3xl font-bold text-zinc-950 tracking-tight mb-8">
+              Shipping Info
+            </h2>
+            <form @submit.prevent="handleCheckout" class="space-y-6">
+              <div class="space-y-2">
+                <label
+                  class="text-[10px] uppercase tracking-widest font-bold text-zinc-400"
+                  >Full Name</label
+                >
+                <input
+                  v-model="formData.customer_name"
+                  type="text"
+                  required
+                  class="w-full bg-white px-6 py-4 border border-zinc-200 text-zinc-900 focus:border-zinc-950 outline-none transition-all placeholder:text-zinc-300"
+                  placeholder="Budi Santoso"
+                />
+              </div>
+              <div class="space-y-2">
+                <label
+                  class="text-[10px] uppercase tracking-widest font-bold text-zinc-400"
+                  >Email Address</label
+                >
+                <input
+                  v-model="formData.customer_email"
+                  type="email"
+                  required
+                  class="w-full bg-white px-6 py-4 border border-zinc-200 text-zinc-900 focus:border-zinc-950 outline-none transition-all placeholder:text-zinc-300"
+                  placeholder="budi@example.com"
+                />
+              </div>
+              <div class="space-y-2">
+                <label
+                  class="text-[10px] uppercase tracking-widest font-bold text-zinc-400"
+                  >WhatsApp Number</label
+                >
+                <input
+                  v-model="formData.customer_phone"
+                  type="tel"
+                  required
+                  class="w-full bg-white px-6 py-4 border border-zinc-200 text-zinc-900 focus:border-zinc-950 outline-none transition-all placeholder:text-zinc-300"
+                  placeholder="08123456789"
+                />
+              </div>
+              <div class="space-y-2">
+                <label
+                  class="text-[10px] uppercase tracking-widest font-bold text-zinc-400"
+                  >Full Address</label
+                >
+                <textarea
+                  v-model="formData.shipping_address"
+                  required
+                  class="w-full bg-white px-6 py-4 border border-zinc-200 text-zinc-900 focus:border-zinc-950 outline-none transition-all h-32 placeholder:text-zinc-300 resize-none"
+                  placeholder="Jl. Merdeka No. 123, Jakarta"
+                ></textarea>
+              </div>
+              <button
+                type="submit"
+                :disabled="loading"
+                class="w-full py-6 bg-zinc-950 text-white font-bold uppercase tracking-widest text-sm hover:bg-zinc-800 transition-all shadow-xl active:scale-95 flex items-center justify-center gap-3"
+              >
+                <Icon v-if="loading" name="svg-spinners:180-ring" />
+                {{ loading ? "Processing..." : "Confirm & Pay" }}
+              </button>
+              <div
+                class="flex items-center justify-center gap-3 pt-4 opacity-30 grayscale"
+              >
+                <span class="text-[8px] font-bold uppercase tracking-[0.2em]"
+                  >Secure Checkout by Midtrans</span
+                >
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+      <div
+        v-else-if="!checkoutSuccess"
+        class="text-center py-40 border-y border-zinc-100 animate-in fade-in zoom-in duration-700"
+      >
+        <div
+          class="mb-10 inline-flex w-24 h-24 bg-zinc-50 items-center justify-center"
+        >
+          <Icon name="uil:shopping-bag" class="text-6xl text-zinc-200" />
+        </div>
+        <h2 class="text-4xl font-bold text-zinc-950 tracking-tight mb-4">
+          Bag is empty
+        </h2>
+        <p class="text-zinc-400 text-lg mb-12 max-w-sm mx-auto">
+          You haven't added any products to your cart yet. Discover our latest
+          innovative pieces.
+        </p>
+        <NuxtLink
+          to="/"
+          class="inline-block px-12 py-5 bg-zinc-950 text-white font-bold uppercase tracking-widest text-sm hover:bg-zinc-800 transition-all shadow-lg"
+        >
+          Discover Products
+        </NuxtLink>
+      </div>
     </div>
   </div>
 </template>
@@ -404,5 +459,29 @@ const goToWhatsApp = () => {
 <style scoped>
 :global(.snap-pay-modal) {
   z-index: 9999 !important;
+}
+
+.animate-in {
+  animation-fill-mode: forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>

@@ -1,9 +1,57 @@
 <script setup lang="ts">
+import { onMounted, onUnmounted, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { ScrollSmoother } from "gsap/ScrollSmoother";
+
 const authStore = useAuthStore();
 const router = useRouter();
+const route = useRoute();
 const isSidebarOpen = ref(true);
 
+const { smoother, setSmoother } = useSmoother();
 const { adminLogout } = useApi();
+
+if (import.meta.client) {
+  gsap.registerPlugin(ScrollTrigger, ScrollSmoother);
+}
+
+onMounted(() => {
+  if (import.meta.client) {
+    const instance = ScrollSmoother.create({
+      wrapper: "#smooth-wrapper",
+      content: "#smooth-content",
+      smooth: 1.0,
+      effects: true,
+    });
+    setSmoother(instance);
+  }
+});
+
+watch(
+  () => route.fullPath,
+  (newVal, oldVal) => {
+    if (import.meta.client && smoother.value) {
+      const newPath = newVal.split("#")[0];
+      const oldPath = oldVal.split("#")[0];
+
+      if (newPath !== oldPath) {
+        setTimeout(() => {
+          ScrollTrigger.refresh();
+          smoother.value.scrollTop(0);
+        }, 200);
+      }
+    }
+  },
+);
+
+onUnmounted(() => {
+  if (smoother.value) {
+    smoother.value.kill();
+    setSmoother(null);
+  }
+});
 
 const handleLogout = async () => {
   try {
@@ -76,6 +124,7 @@ const navItems = [
       </div>
     </aside>
     <main
+      id="smooth-wrapper"
       class="flex-1 transition-all duration-300 min-h-screen flex flex-col"
       :class="isSidebarOpen ? 'ml-72' : 'ml-0'"
     >
@@ -96,7 +145,6 @@ const navItems = [
             {{ $route.meta.title || "Dashboard" }}
           </h2>
         </div>
-
         <div class="flex items-center gap-8">
           <NuxtLink
             to="/"
@@ -116,14 +164,16 @@ const navItems = [
           </div>
         </div>
       </header>
-      <div class="p-10 flex-1">
-        <slot />
+      <div id="smooth-content" class="flex flex-col flex-1">
+        <div class="p-10 flex-1">
+          <slot />
+        </div>
+        <footer
+          class="p-8 text-center text-gray-900 text-xs tracking-widest uppercase border-t border-gray-50 bg-white"
+        >
+          &copy; {{ new Date().getFullYear() }} Uncover Admin System.
+        </footer>
       </div>
-      <footer
-        class="p-8 text-center text-gray-900 text-xs tracking-widest uppercase border-t border-gray-50 bg-white"
-      >
-        &copy; {{ new Date().getFullYear() }} Uncover Admin System.
-      </footer>
     </main>
   </div>
 </template>

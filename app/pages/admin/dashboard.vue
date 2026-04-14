@@ -43,7 +43,7 @@ onMounted(async () => {
         order.status === "success" ||
         order.status === "paid" ||
         order.status === "settlement" ||
-        order.status === "pending"
+        order.status === "capture"
       ) {
         totalRevenue += Number(order.total_amount || 0);
       }

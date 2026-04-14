@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { popularProducts } from "../../data/products";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 const route = useRoute();
+const router = useRouter();
+const cartStore = useCartStore();
+
 const productId = route.params.id as string;
 const product = computed(() => {
   return popularProducts.find((p) => p.slug === productId);
@@ -15,7 +18,23 @@ if (product.value) {
   activeImage.value = product.value.img;
 }
 
-// GSAP Animations
+const isAdding = ref(false);
+
+const addToCart = () => {
+  if (!product.value) return;
+  cartStore.addItem(product.value.id, 1);
+  isAdding.value = true;
+  setTimeout(() => {
+    isAdding.value = false;
+  }, 2000);
+};
+
+const buyNow = () => {
+  if (!product.value) return;
+  cartStore.addItem(product.value.id, 1);
+  router.push("/cart");
+};
+
 onMounted(() => {
   if (import.meta.client) {
     gsap.registerPlugin(ScrollTrigger);
@@ -63,7 +82,6 @@ const selectImage = (img: string) => {
           <span class="text-gray-900">{{ product.name }}</span>
         </nav>
       </div>
-
       <div class="w-full max-w-280 px-4">
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
           <div class="md:col-span-7 product-gallery">
@@ -106,7 +124,8 @@ const selectImage = (img: string) => {
             </h1>
             <div class="flex items-center gap-4 mb-8">
               <span class="text-3xl font-medium text-gray-900"
-                >${{ product.price }}</span
+                >Rp
+                {{ new Intl.NumberFormat("id-ID").format(product.price) }}</span
               >
               <span
                 v-if="product.inStock"
@@ -121,11 +140,14 @@ const selectImage = (img: string) => {
             </p>
             <div class="flex flex-col gap-4 mt-auto">
               <button
-                class="w-full bg-[#FF5A00] text-white py-5 text-sm font-bold uppercase tracking-widest hover:bg-black transition-colors duration-300 shadow-lg"
+                @click="addToCart"
+                :disabled="isAdding"
+                class="w-full bg-[#FF5A00] text-white py-5 text-sm font-bold uppercase tracking-widest hover:bg-black transition-all duration-300 shadow-lg disabled:bg-gray-400"
               >
-                Add to Cart
+                {{ isAdding ? "Added to Cart!" : "Add to Cart" }}
               </button>
               <button
+                @click="buyNow"
                 class="w-full border border-gray-300 py-5 text-sm font-bold uppercase tracking-widest hover:border-black transition-colors duration-300 bg-white"
               >
                 Buy Now

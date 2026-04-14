@@ -224,37 +224,50 @@ onMounted(() => {
         <div class="grid grid-cols-3 gap-2">
           <NuxtLink
             v-for="product in filteredProducts"
-            :key="product.name"
+            :key="product.id"
             :to="`/products/${product.slug}`"
-            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer popular-card"
+            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer popular-card shadow-sm hover:shadow-md transition-shadow"
           >
-            <div
-              v-if="product.new"
-              class="absolute top-6 left-6 bg-[#FF5A00] text-white text-xs font-semibold px-2 py-1 z-10"
-            >
-              New
+            <div class="absolute top-6 left-6 flex flex-col gap-2 z-10">
+              <div
+                v-if="product.new"
+                class="bg-[#FF5A00] text-white text-[10px] uppercase tracking-widest font-bold px-2 py-1"
+              >
+                New
+              </div>
             </div>
+            <button
+              @click.stop.prevent="useCartStore().addItem(product.id, 1)"
+              class="absolute top-6 right-6 w-10 h-10 bg-zinc-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-20 hover:bg-orange-600"
+              title="Add to Cart"
+            >
+              <Icon name="uil:plus" class="text-xl" />
+            </button>
             <div
               class="h-64 flex justify-center items-center overflow-hidden mb-8"
             >
               <img
                 :src="product.img"
-                class="object-contain transition-transform duration-500 group-hover:scale-105"
+                class="object-contain transition-transform duration-500 group-hover:scale-105 h-full w-full"
               />
             </div>
 
+            <!-- Info -->
             <div class="mt-auto flex justify-between items-end">
               <div>
-                <h3 class="text-base font-medium text-gray-900">
+                <h3 class="text-base font-medium text-gray-900 line-clamp-1">
                   {{ product.name }}
                 </h3>
-                <p class="text-sm text-gray-400 mt-1" v-if="product.inStock">
+                <p
+                  class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-bold"
+                  v-if="product.inStock"
+                >
                   In Stock
                 </p>
               </div>
-              <div>
-                <p class="text-sm font-medium text-gray-500">
-                  ${{ product.price }}
+              <div class="shrink-0">
+                <p class="text-sm font-bold text-gray-950">
+                  Rp {{ new Intl.NumberFormat("id-ID").format(product.price) }}
                 </p>
               </div>
             </div>
@@ -372,11 +385,12 @@ onMounted(() => {
           </div>
         </div>
         <div class="flex justify-center mt-12">
-          <button
+          <NuxtLink
+            to="/about"
             class="bg-white px-6 py-3 text-sm font-medium text-gray-700 hover:text-orange-500 shadow-sm transition-colors border border-transparent hover:border-orange-500 cursor-pointer"
           >
             More About Us
-          </button>
+          </NuxtLink>
         </div>
       </div>
     </main>

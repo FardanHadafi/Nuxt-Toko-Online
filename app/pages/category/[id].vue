@@ -68,7 +68,6 @@ onMounted(() => {
           Gear designed for movement, nature, and adventure.
         </p>
       </div>
-
       <div class="w-full max-w-280 px-4 mt-24 category-grid">
         <div
           v-if="categoryProducts.length > 0"
@@ -94,7 +93,6 @@ onMounted(() => {
                 class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
               />
             </div>
-
             <div class="mt-auto flex justify-between items-end">
               <div>
                 <h3 class="text-base font-medium text-gray-900">

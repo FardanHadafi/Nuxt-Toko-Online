@@ -39,6 +39,7 @@ export interface Order {
   snap_token: string;
   snap_redirect_url: string;
   payment_type?: string;
+  created_at?: string;
   items?: OrderItem[];
 }
 
@@ -60,14 +61,17 @@ export interface AddProductRequest {
   description?: string;
   stock?: number;
   image_url?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateProductRequest {
   name?: string;
+  category_id?: string;
+  description?: string;
   price?: number;
   stock?: number;
-  is_active?: boolean;
   image_url?: string;
+  is_active?: boolean;
 }
 
 export interface UpdateCategoryRequest {
@@ -78,6 +82,7 @@ export interface UpdateSettingRequest {
   store_name?: string;
   whatsapp_number?: string;
   address_info?: string;
+  welcome_message?: string;
 }
 
 export interface CheckoutItem {
@@ -90,5 +95,12 @@ export interface CheckoutRequest {
   customer_email: string;
   customer_phone?: string;
   shipping_address: string;
+  note?: string;
   items: CheckoutItem[];
+}
+
+export interface UpdateUserRequest {
+  username?: string;
+  name?: string;
+  password?: string;
 }

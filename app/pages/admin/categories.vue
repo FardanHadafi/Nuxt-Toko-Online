@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { gsap } from "gsap";
 import type { Category, UpdateCategoryRequest } from "~/types";
 
 definePageMeta({
@@ -12,35 +11,27 @@ useHead({
   title: "Categories | Uncover Admin",
 });
 
-const { getCategories, createCategory, updateCategory, deleteCategory } =
-  useApi();
+const {
+  getCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  uploadImage,
+} = useApi();
 
 const categories = ref<Category[]>([]);
 const loading = ref(true);
-
 const isModalOpen = ref(false);
 const isEditing = ref(false);
 const submitting = ref(false);
-
-const form = reactive({ name: "" });
+const form = reactive({ name: "", image_url: "" });
 const currentId = ref<string>("");
+const uploadingImage = ref(false);
 
 const fetchData = async () => {
   loading.value = true;
   try {
     categories.value = await getCategories();
-
-    if (import.meta.client) {
-      setTimeout(() => {
-        gsap.from(".category-row", {
-          opacity: 0,
-          y: 20,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: "power2.out",
-        });
-      }, 100);
-    }
   } catch (error) {
     console.error("Failed to load categories:", error);
   } finally {
@@ -50,18 +41,11 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
-  if (import.meta.client) {
-    gsap.from(".admin-header", {
-      opacity: 0,
-      x: -30,
-      duration: 1,
-      ease: "power3.out",
-    });
-  }
 });
 
 const openAddModal = () => {
   form.name = "";
+  form.image_url = "";
   isEditing.value = false;
   isModalOpen.value = true;
 };
@@ -70,6 +54,7 @@ const openEditModal = (category: Category) => {
   isEditing.value = true;
   currentId.value = category.id;
   form.name = category.name;
+  form.image_url = category.image_url || "";
   isModalOpen.value = true;
 };
 
@@ -82,7 +67,10 @@ const handleSubmit = async () => {
 
   submitting.value = true;
   try {
-    const payload: UpdateCategoryRequest = { name: form.name.trim() };
+    const payload: UpdateCategoryRequest = {
+      name: form.name.trim(),
+      image_url: form.image_url,
+    };
     if (isEditing.value) {
       await updateCategory(currentId.value, payload);
     } else {
@@ -97,6 +85,27 @@ const handleSubmit = async () => {
   }
 };
 
+const handleFileUpload = async (event: Event) => {
+  const target = event.target as HTMLInputElement;
+  const file = target.files?.[0];
+  if (!file) return;
+
+  uploadingImage.value = true;
+  try {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await uploadImage(formData);
+
+    form.image_url = response.url;
+  } catch (error) {
+    console.error("Upload failed:", error);
+    alert("Upload failed. Please check your connection.");
+  } finally {
+    uploadingImage.value = false;
+  }
+};
+
 const handleDelete = async (id: string) => {
   if (
     confirm(
@@ -107,7 +116,9 @@ const handleDelete = async (id: string) => {
       await deleteCategory(id);
       await fetchData();
     } catch (error: any) {
-      alert("Error: " + (error.data?.message || error.message));
+      const message =
+        error.data?.detail || error.data?.message || error.message;
+      alert("Gagal menghapus kategori: " + message);
     }
   }
 };
@@ -178,6 +189,11 @@ const handleDelete = async (id: string) => {
               <th
                 class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
               >
+                Products
+              </th>
+              <th
+                class="px-10 py-6 text-center text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]"
+              >
                 System ID
               </th>
               <th
@@ -194,8 +210,21 @@ const handleDelete = async (id: string) => {
               class="border-b border-gray-50 hover:bg-gray-50/50 transition-colors category-row"
             >
               <td class="px-10 py-8 whitespace-nowrap">
-                <div class="flex items-center gap-4">
-                  <div class="w-2 h-2 bg-[#FF5A00]"></div>
+                <div class="flex items-center gap-6">
+                  <div
+                    class="w-12 h-12 bg-gray-50 flex items-center justify-center border border-gray-100 overflow-hidden shrink-0"
+                  >
+                    <img
+                      v-if="category.image_url"
+                      :src="category.image_url"
+                      class="w-full h-full object-cover"
+                    />
+                    <Icon
+                      v-else
+                      name="uil:apps"
+                      class="text-gray-200 text-2xl"
+                    />
+                  </div>
                   <div class="text-base font-bold text-gray-900 tracking-tight">
                     {{ category.name }}
                   </div>
@@ -206,6 +235,19 @@ const handleDelete = async (id: string) => {
                   class="text-xs font-mono text-gray-900 bg-gray-50 px-2 py-1"
                   >/category/{{ category.slug }}</code
                 >
+              </td>
+              <td
+                class="px-10 py-8 whitespace-nowrap text-sm font-bold text-gray-900 text-center uppercase tracking-widest"
+              >
+                <span
+                  :class="
+                    category.product_count > 0
+                      ? 'text-gray-900'
+                      : 'text-gray-300'
+                  "
+                >
+                  {{ category.product_count }}
+                </span>
               </td>
               <td
                 class="px-10 py-8 whitespace-nowrap text-[10px] text-gray-900 font-mono text-center tracking-widest"
@@ -252,7 +294,8 @@ const handleDelete = async (id: string) => {
         <div class="p-12">
           <div class="mb-12">
             <h3 class="text-4xl font-light text-gray-900 italic">
-              {{ isEditing ? "Edit" : "New" }} <span class="font-bold not-italic">Category.</span>
+              {{ isEditing ? "Edit" : "New" }}
+              <span class="font-bold not-italic">Category.</span>
             </h3>
             <p
               class="text-gray-400 mt-2 text-xs font-bold uppercase tracking-widest"
@@ -269,15 +312,65 @@ const handleDelete = async (id: string) => {
             <div class="space-y-2">
               <label
                 class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
-                >Display Name</label
+                >Category Name</label
               >
               <input
-                v-model="form.name"
                 type="text"
+                v-model="form.name"
+                class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-sm font-bold tracking-tight"
+                placeholder="e.g. Best Sellers"
                 required
-                class="w-full bg-gray-50 border border-transparent py-4 px-6 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-gray-900 font-bold"
-                placeholder="e.g., Sustainable Tech"
               />
+            </div>
+
+            <div class="space-y-2">
+              <label
+                class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
+                >Category Visual</label
+              >
+              <div class="flex items-start gap-6">
+                <div
+                  class="w-32 h-32 bg-gray-50 border border-dashed border-gray-200 flex items-center justify-center overflow-hidden relative group"
+                >
+                  <img
+                    v-if="form.image_url"
+                    :src="form.image_url"
+                    class="w-full h-full object-cover"
+                  />
+                  <div v-else class="text-gray-300">
+                    <Icon name="uil:image-plus" class="text-3xl" />
+                  </div>
+                  <div
+                    v-if="uploadingImage"
+                    class="absolute inset-0 bg-white/80 flex items-center justify-center"
+                  >
+                    <Icon
+                      name="svg-spinners:180-ring"
+                      class="text-orange-500"
+                    />
+                  </div>
+                </div>
+                <div class="flex-1 space-y-4">
+                  <input
+                    type="text"
+                    v-model="form.image_url"
+                    class="w-full bg-gray-50 border border-transparent py-3 px-4 focus:bg-white focus:border-gray-200 focus:outline-none transition-all text-sm font-mono"
+                    placeholder="https://image-url.com"
+                  />
+                  <label
+                    class="inline-block bg-black text-white px-6 py-3 text-[10px] font-bold uppercase tracking-widest cursor-pointer hover:bg-[#FF5A00] transition-colors shadow-sm"
+                  >
+                    {{ uploadingImage ? "Uploading..." : "Upload New Image" }}
+                    <input
+                      type="file"
+                      class="hidden"
+                      accept="image/*"
+                      @change="handleFileUpload"
+                      :disabled="uploadingImage"
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
 
             <div

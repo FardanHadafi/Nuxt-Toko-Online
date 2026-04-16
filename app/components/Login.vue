@@ -2,12 +2,10 @@
 const { adminLogin } = useApi();
 const authStore = useAuthStore();
 const router = useRouter();
-
 const formData = reactive({
   username: "",
   password: "",
 });
-
 const loading = ref(false);
 const errorMessage = ref("");
 

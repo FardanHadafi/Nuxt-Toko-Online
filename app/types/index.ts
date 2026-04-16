@@ -8,12 +8,18 @@ export interface Product {
   category_id: string;
   is_active: boolean;
   image_url: string;
+  images?: string[];
+  category_name?: string;
+  category_slug?: string;
   category?: Category;
 }
 
 export interface Category {
   id: string;
   name: string;
+  slug: string;
+  image_url: string;
+  product_count: number;
 }
 
 export interface OrderItem {
@@ -61,6 +67,7 @@ export interface AddProductRequest {
   description?: string;
   stock?: number;
   image_url?: string;
+  images?: string[];
   is_active?: boolean;
 }
 
@@ -71,11 +78,13 @@ export interface UpdateProductRequest {
   price?: number;
   stock?: number;
   image_url?: string;
+  images?: string[];
   is_active?: boolean;
 }
 
 export interface UpdateCategoryRequest {
   name: string;
+  image_url?: string;
 }
 
 export interface UpdateSettingRequest {

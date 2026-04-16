@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { gsap } from "gsap";
-
 const { getProducts, getAllOrders } = useApi();
 const stats = ref([
   {
@@ -54,23 +52,6 @@ onMounted(async () => {
       currency: "IDR",
       minimumFractionDigits: 0,
     }).format(totalRevenue);
-
-    // GSAP Animations
-    if (import.meta.client) {
-      gsap.from(".stat-card", {
-        y: 20,
-        opacity: 0.4,
-        duration: 0.5,
-        ease: "power2.out",
-      });
-
-      gsap.from(".dashboard-section", {
-        y: 20,
-        duration: 0.6,
-        delay: 0.1,
-        ease: "power2.out",
-      });
-    }
   } catch (error) {
     console.error("Failed to load stats:", error);
   }

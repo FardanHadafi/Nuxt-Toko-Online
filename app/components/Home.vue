@@ -1,20 +1,54 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from "vue";
-import { productGrid, popularProducts } from "../data/products";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+const { getProducts, getCategories } = useApi();
+const apiProducts = ref<any[]>([]);
+const apiCategories = ref<any[]>([]);
+const allProducts = computed(() => {
+  return apiProducts.value.map((p) => ({
+    ...p,
+    img: p.image_url,
+    images: p.images || [],
+    inStock: p.stock > 0,
+    new: p.is_active,
+    price: Number(p.price),
+  }));
+});
+
+const dynamicCategoryGrid = computed(() => {
+  return apiCategories.value.map((cat) => {
+    const count = apiProducts.value.filter(
+      (p) => p.category_id === cat.id,
+    ).length;
+    return {
+      category: cat.name,
+      slug: cat.slug,
+      item: `${count} items`,
+      img: cat.image_url || "/images/cat-placeholder.png",
+    };
+  });
+});
 
 const activeFilter = ref("All Items");
 const filteredProducts = computed(() => {
   if (activeFilter.value === "New Products") {
-    return popularProducts.filter((p) => p.new);
+    return allProducts.value.filter((p) => p.new);
   } else if (activeFilter.value === "Classic") {
-    return popularProducts.filter((p) => !p.new);
+    return allProducts.value.filter((p) => !p.new);
   }
-  return popularProducts;
+  return allProducts.value;
 });
 
-onMounted(() => {
+onMounted(async () => {
+  try {
+    const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
+    apiProducts.value = prods;
+    apiCategories.value = cats;
+  } catch (error) {
+    console.error("Failed to fetch products:", error);
+  }
   if (import.meta.client) {
     gsap.registerPlugin(ScrollTrigger);
 
@@ -93,9 +127,9 @@ onMounted(() => {
       <div id="categories" class="w-full max-w-360 px-4 mt-24">
         <div class="grid grid-cols-2 gap-4">
           <NuxtLink
-            v-for="product in productGrid"
-            :key="product.category"
-            :to="`/category/${product.category.toLowerCase().replace(' ', '-')}`"
+            v-for="product in dynamicCategoryGrid"
+            :key="product.slug"
+            :to="`/category/${product.slug}`"
             class="group cursor-pointer bg-white product-grid-item block"
           >
             <div class="overflow-hidden bg-[#f0f0f0]">

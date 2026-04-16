@@ -1,12 +1,27 @@
 <script setup lang="ts">
-import { computed, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { useRoute } from "vue-router";
-import { popularProducts } from "~/data/products";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+const { getProducts, getCategories } = useApi();
 const route = useRoute();
 const categorySlug = route.params.id as string;
+const apiProducts = ref<any[]>([]);
+const apiCategories = ref<any[]>([]);
+
+onMounted(async () => {
+  try {
+    const [products, categories] = await Promise.all([
+      getProducts(),
+      getCategories(),
+    ]);
+    apiProducts.value = products;
+    apiCategories.value = categories;
+  } catch (error) {
+    console.error("Failed to fetch data:", error);
+  }
+});
 
 const categoryTitle = computed(() => {
   return categorySlug
@@ -16,10 +31,27 @@ const categoryTitle = computed(() => {
 });
 
 const categoryProducts = computed(() => {
-  if (categorySlug === "best-sellers" || categorySlug === "best-seller") {
-    return popularProducts.filter((p) => p.bestSeller);
-  }
-  return popularProducts.filter((p) => p.category === categorySlug);
+  const targetCategory = apiCategories.value.find(
+    (c) =>
+      c.slug === categorySlug ||
+      c.name.toLowerCase().replace(/\s+/g, "-") === categorySlug,
+  );
+
+  return apiProducts.value
+    .filter((p) => {
+      if (categorySlug === "best-sellers" || categorySlug === "best-seller") {
+        return p.is_active;
+      }
+      return p.category_id === targetCategory?.id;
+    })
+    .map((p) => ({
+      ...p,
+      img: p.image_url,
+      images: p.images || [],
+      inStock: p.stock > 0,
+      new: p.is_active,
+      price: Number(p.price),
+    }));
 });
 
 onMounted(() => {

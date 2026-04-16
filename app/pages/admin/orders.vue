@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { gsap } from "gsap";
 import type { Order } from "~/types";
 
 definePageMeta({
@@ -12,7 +11,7 @@ useHead({
   title: "Orders | Uncover Admin",
 });
 
-const { getAllOrders, getOrderById, getProducts } = useApi();
+const { getAllOrders, getOrderById, getProducts, cancelOrder } = useApi();
 
 const orders = ref<Order[]>([]);
 const loading = ref(true);
@@ -20,6 +19,7 @@ const isModalOpen = ref(false);
 const detailLoading = ref(false);
 const selectedOrder = ref<any>(null);
 const productMap = ref<Record<string, any>>({});
+const cancellingId = ref<string | null>(null);
 
 const fetchData = async () => {
   loading.value = true;
@@ -38,17 +38,7 @@ const fetchData = async () => {
     }
     productMap.value = pMap;
 
-    if (import.meta.client) {
-      setTimeout(() => {
-        gsap.from(".order-row", {
-          opacity: 0,
-          y: 20,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: "power2.out",
-        });
-      }, 100);
-    }
+    productMap.value = pMap;
   } catch (error) {
     console.error("Failed to load orders:", error);
   } finally {
@@ -58,14 +48,6 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
-  if (import.meta.client) {
-    gsap.from(".admin-header", {
-      opacity: 0,
-      x: -30,
-      duration: 1,
-      ease: "power3.out",
-    });
-  }
 });
 
 const getStatusColor = (status: string) => {
@@ -78,6 +60,7 @@ const getStatusColor = (status: string) => {
       return "bg-orange-50 text-[#FF5A00] border border-orange-100";
     case "expired":
     case "canceled":
+    case "failed":
       return "bg-gray-100 text-gray-400";
     default:
       return "bg-gray-50 text-gray-400";
@@ -94,6 +77,7 @@ const getStatusLabel = (status: string) => {
       return "AWAITING CLEARANCE";
     case "expired":
     case "canceled":
+    case "failed":
       return "VOID / TERMINATED";
     default:
       return status.toUpperCase();
@@ -141,6 +125,22 @@ const formatPrice = (price: number) => {
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(price || 0);
+};
+
+const handleCancel = async (id: string) => {
+  if (!confirm("Are you sure you want to VOID this transaction and restore stock?"))
+    return;
+
+  cancellingId.value = id;
+  try {
+    await cancelOrder(id);
+    await fetchData();
+  } catch (error: any) {
+    const message = error.data?.detail || error.data?.message || error.message;
+    alert("Cancellation Failed: " + message);
+  } finally {
+    cancellingId.value = null;
+  }
 };
 </script>
 
@@ -255,12 +255,23 @@ const formatPrice = (price: number) => {
                 </span>
               </td>
               <td class="px-10 py-8 whitespace-nowrap text-right">
-                <button
-                  @click="openDetailModal(order.id)"
-                  class="bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-colors shadow-sm"
-                >
-                  Inspect
-                </button>
+                <div class="flex items-center justify-end gap-3">
+                  <button
+                    v-if="order.status.toLowerCase() === 'pending'"
+                    @click="handleCancel(order.id)"
+                    :disabled="cancellingId === order.id"
+                    class="bg-white text-red-500 border border-red-100 px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-red-50 transition-colors disabled:opacity-50"
+                  >
+                    <Icon v-if="cancellingId === order.id" name="svg-spinners:180-ring" class="mr-1" />
+                    Void
+                  </button>
+                  <button
+                    @click="openDetailModal(order.id)"
+                    class="bg-black text-white px-4 py-2 text-[10px] font-bold uppercase tracking-widest hover:bg-[#FF5A00] transition-colors shadow-sm"
+                  >
+                    Inspect
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>

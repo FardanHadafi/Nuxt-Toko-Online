@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { gsap } from "gsap";
 import type {
   Product,
   Category,
@@ -40,13 +39,14 @@ const initialFormState = {
   stock: 0,
   is_active: true,
   image_url: "",
+  images: ["", "", "", "", ""] as string[],
 };
 
 const form = reactive({ ...initialFormState });
 const currentId = ref<string>("");
 const uploadingImage = ref(false);
 
-const handleFileUpload = async (event: Event) => {
+const handleFileUpload = async (event: Event, index: number | "main") => {
   const target = event.target as HTMLInputElement;
   if (!target.files || target.files.length === 0) return;
   const file = target.files[0];
@@ -57,7 +57,12 @@ const handleFileUpload = async (event: Event) => {
   uploadingImage.value = true;
   try {
     const res = await uploadImage(formData);
-    form.image_url = res.url || (res as any).data?.url || "";
+    const url = res.url || (res as any).data?.url || "";
+    if (index === "main") {
+      form.image_url = url;
+    } else {
+      form.images[index] = url;
+    }
   } catch (error) {
     alert("Gagal mengupload gambar.");
     console.error(error);
@@ -71,20 +76,8 @@ const fetchData = async () => {
   try {
     const [prods, cats] = await Promise.all([getProducts(), getCategories()]);
     products.value = prods;
+    products.value = prods;
     categories.value = cats;
-
-    // GSAP after fetch
-    if (import.meta.client) {
-      setTimeout(() => {
-        gsap.from(".product-row", {
-          opacity: 0,
-          y: 20,
-          duration: 0.6,
-          stagger: 0.05,
-          ease: "power2.out",
-        });
-      }, 100);
-    }
   } catch (error) {
     console.error("Failed to load data:", error);
   } finally {
@@ -94,14 +87,6 @@ const fetchData = async () => {
 
 onMounted(() => {
   fetchData();
-  if (import.meta.client) {
-    gsap.from(".admin-header", {
-      opacity: 0,
-      x: -30,
-      duration: 1,
-      ease: "power3.out",
-    });
-  }
 });
 
 const getCategoryName = (id: string) => {
@@ -128,6 +113,7 @@ const openEditModal = (product: Product) => {
     stock: product.stock || 0,
     is_active: product.is_active,
     image_url: product.image_url || "",
+    images: [...(product.images || []), "", "", "", "", ""].slice(0, 5),
   });
   isModalOpen.value = true;
 };
@@ -146,6 +132,7 @@ const handleSubmit = async () => {
         stock: Number(form.stock),
         is_active: form.is_active,
         image_url: form.image_url,
+        images: form.images.filter((url) => url !== ""),
       };
       await updateProduct(currentId.value, payload);
     } else {
@@ -156,6 +143,7 @@ const handleSubmit = async () => {
         description: form.description,
         stock: Number(form.stock),
         image_url: form.image_url,
+        images: form.images.filter((url) => url !== ""),
       };
       await createProduct(payload);
     }
@@ -388,55 +376,76 @@ const handleDelete = async (id: string) => {
             <div class="space-y-4">
               <label
                 class="block text-xs font-bold text-gray-400 uppercase tracking-[0.2em]"
-                >Product Visual</label
+                >Product Master Visual & Gallery</label
               >
-              <div class="flex items-center gap-8">
-                <div
-                  class="w-32 h-32 bg-gray-50 flex items-center justify-center border border-gray-100 p-2 overflow-hidden shrink-0"
-                >
-                  <img
-                    v-if="form.image_url"
-                    :src="form.image_url"
-                    class="w-full h-full object-contain"
-                  />
-                  <Icon
-                    v-else
-                    name="uil:image-v"
-                    class="text-gray-200 text-4xl"
-                  />
-                </div>
-                <div class="relative grow h-32">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    @change="handleFileUpload"
-                    :disabled="uploadingImage"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  />
+              <div class="space-y-6">
+                <!-- Master Image -->
+                <div class="flex items-center gap-8 bg-gray-50/50 p-4 border border-gray-100">
                   <div
-                    class="h-full border border-gray-100 border-dashed flex flex-col items-center justify-center group hover:border-[#FF5A00] bg-gray-50/50 hover:bg-white transition-all duration-300"
+                    class="w-32 h-32 bg-white flex items-center justify-center border border-gray-100 p-2 overflow-hidden shrink-0 shadow-sm"
                   >
-                    <Icon
-                      v-if="uploadingImage"
-                      name="svg-spinners:180-ring"
-                      class="text-[#FF5A00] mb-2"
+                    <img
+                      v-if="form.image_url"
+                      :src="form.image_url"
+                      class="w-full h-full object-contain"
                     />
                     <Icon
                       v-else
-                      name="uil:cloud-upload"
-                      class="text-gray-300 group-hover:text-[#FF5A00] transition-colors mb-2 text-2xl"
+                      name="uil:image-v"
+                      class="text-gray-200 text-4xl"
                     />
-                    <span
-                      class="text-[10px] font-bold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-gray-900"
+                  </div>
+                  <div class="relative grow h-32">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      @change="(e) => handleFileUpload(e, 'main')"
+                      :disabled="uploadingImage"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div
+                      class="h-full border border-gray-200 border-dashed flex flex-col items-center justify-center group hover:border-[#FF5A00] bg-white transition-all duration-300"
                     >
-                      {{
-                        uploadingImage
-                          ? "Processing Image..."
-                          : "Select Media File"
-                      }}
-                    </span>
+                      <Icon
+                        v-if="uploadingImage"
+                        name="svg-spinners:180-ring"
+                        class="text-[#FF5A00] mb-2"
+                      />
+                      <Icon
+                        v-else
+                        name="uil:camera"
+                        class="text-gray-300 group-hover:text-[#FF5A00] transition-colors mb-2 text-2xl"
+                      />
+                      <span
+                        class="text-[10px] font-bold text-gray-400 uppercase tracking-widest transition-colors group-hover:text-gray-900"
+                      >
+                        Main Visual
+                      </span>
+                    </div>
                   </div>
                 </div>
+
+                <!-- Gallery Grid -->
+                <div class="grid grid-cols-5 gap-4">
+                  <div v-for="(url, index) in form.images" :key="index" class="relative group aspect-square bg-gray-50 border border-gray-100 overflow-hidden">
+                    <img v-if="url" :src="url" class="absolute inset-0 w-full h-full object-contain p-2" />
+                    <div v-else class="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                       <Icon name="uil:plus-circle" class="text-gray-200 text-xl" />
+                       <span class="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Angle {{ index + 1 }}</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      @change="(e) => handleFileUpload(e, index)"
+                      :disabled="uploadingImage"
+                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                    />
+                    <div v-if="url" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                       <Icon name="uil:sync" class="text-white text-xl" />
+                    </div>
+                  </div>
+                </div>
+                <p class="text-[9px] text-gray-400 italic">Upload up to 5 additional angles for the product gallery. Master image is required.</p>
               </div>
             </div>
             <div class="space-y-2">

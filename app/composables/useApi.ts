@@ -1,8 +1,4 @@
 import type {
-  Product,
-  Category,
-  Order,
-  LoginResponse,
   CheckoutRequest,
   AddProductRequest,
   UpdateProductRequest,
@@ -35,7 +31,10 @@ export const useApi = () => {
         console.warn("Sesi tidak valid/kadaluarsa, me-logout otomatis.");
         authStore.logout();
         if (process.client) {
-          window.location.href = "/admin/login";
+          const path = window.location.pathname;
+          if (path.startsWith("/admin") && path !== "/admin/login") {
+            window.location.href = "/admin/login";
+          }
         }
       }
       throw error;
@@ -43,7 +42,6 @@ export const useApi = () => {
   };
 
   return {
-    // Public Endpoints
     getProducts: async () => {
       const response = await $fetch<any>("/products", { baseURL: baseUrl });
       return Array.isArray(response) ? response : response.data || [];
@@ -57,18 +55,18 @@ export const useApi = () => {
     checkoutOrder: (data: CheckoutRequest) =>
       fetchWithSecurity<any>("/checkout", { method: "POST", body: data }),
 
-    // Auth Endpoints
     adminLogin: (data: any) =>
       fetchWithSecurity<any>("/admin/login", { method: "POST", body: data }),
     adminLogout: () =>
       fetchWithSecurity<void>("/admin/logout", { method: "POST" }),
 
-    // Admin Endpoints
-    uploadImage: (formData: FormData) =>
-      fetchWithSecurity<{ url: string }>("/upload", {
+    uploadImage: async (formData: FormData) => {
+      const response = await fetchWithSecurity<any>("/upload", {
         method: "POST",
         body: formData,
-      }),
+      });
+      return response.data || response;
+    },
     createProduct: (data: AddProductRequest) =>
       fetchWithSecurity<void>("/products", { method: "POST", body: data }),
     updateProduct: (id: string, data: UpdateProductRequest) =>
@@ -80,7 +78,7 @@ export const useApi = () => {
       fetchWithSecurity<void>(`/products/${id}`, { method: "DELETE" }),
 
     getCategories: async () => {
-      const response = await fetchWithSecurity<any>("/categories");
+      const response = await $fetch<any>("/categories", { baseURL: baseUrl });
       return Array.isArray(response) ? response : response.data || [];
     },
     createCategory: (data: UpdateCategoryRequest) =>
@@ -101,6 +99,8 @@ export const useApi = () => {
       const response = await fetchWithSecurity<any>(`/orders/${id}`);
       return response.data || response;
     },
+    cancelOrder: (id: string) =>
+      fetchWithSecurity<void>(`/orders/${id}/cancel`, { method: "PATCH" }),
 
     getSettings: async () => {
       const response = await fetchWithSecurity<any>("/settings");

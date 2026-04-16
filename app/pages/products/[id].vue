@@ -1,22 +1,51 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watchEffect } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { popularProducts } from "../../data/products";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
+const { getProducts } = useApi();
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
-
 const productId = route.params.id as string;
-const product = computed(() => {
-  return popularProducts.find((p) => p.slug === productId);
+const apiProduct = ref<any>(null);
+
+onMounted(async () => {
+  try {
+    const products = await getProducts();
+    const found = products.find((p: any) => p.slug === productId);
+    if (found) {
+      apiProduct.value = {
+        ...found,
+        img: found.image_url,
+        gallery:
+          found.images && found.images.length > 0
+            ? found.images
+            : [found.image_url],
+        inStock: found.stock > 0,
+        price: Number(found.price),
+        category: found.category_slug || found.category?.slug || "general",
+        category_display:
+          found.category_name || found.category?.name || "Product",
+      };
+      activeImage.value = apiProduct.value.img;
+    }
+  } catch (error) {
+    console.error("Failed to fetch product:", error);
+  }
 });
+
+const product = computed(() => {
+  return apiProduct.value;
+});
+
 const activeImage = ref("");
-if (product.value) {
-  activeImage.value = product.value.img;
-}
+watchEffect(() => {
+  if (product.value && !apiProduct.value) {
+    activeImage.value = product.value.img;
+  }
+});
 
 const isAdding = ref(false);
 
@@ -76,7 +105,7 @@ const selectImage = (img: string) => {
             :to="`/category/${product.category}`"
             class="hover:text-orange-500 transition-colors capitalize"
           >
-            {{ product.category.replace("-", " ") }}
+            {{ product.category_display }}
           </NuxtLink>
           <span>/</span>
           <span class="text-gray-900">{{ product.name }}</span>
@@ -117,7 +146,7 @@ const selectImage = (img: string) => {
             <span
               class="text-xs uppercase tracking-widest text-orange-500 font-bold mb-4"
             >
-              {{ product.category.replace("-", " ") }}
+              {{ product.category_display }}
             </span>
             <h1 class="text-5xl font-light text-gray-900 leading-tight mb-6">
               {{ product.name }}

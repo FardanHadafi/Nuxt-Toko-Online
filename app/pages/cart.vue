@@ -3,7 +3,6 @@ import { popularProducts } from "../data/products";
 
 const cartStore = useCartStore();
 const { getProducts, checkoutOrder } = useApi();
-
 const { data: allProducts } = await useAsyncData("products-cart", () =>
   getProducts(),
 );
@@ -295,7 +294,12 @@ const goToWhatsApp = () => {
                 </button>
               </div>
               <p class="text-zinc-500 text-lg mb-6">
-                Rp {{ new Intl.NumberFormat('id-ID').format(item.product?.price || 0) }}
+                Rp
+                {{
+                  new Intl.NumberFormat("id-ID").format(
+                    item.product?.price || 0,
+                  )
+                }}
               </p>
               <div
                 class="flex items-center justify-center sm:justify-start gap-6"
@@ -336,7 +340,10 @@ const goToWhatsApp = () => {
               class="flex justify-between items-center text-zinc-400 uppercase tracking-widest text-xs font-bold"
             >
               <span>Subtotal</span>
-              <span>Rp {{ new Intl.NumberFormat('id-ID').format(totalPrice) }}</span>
+              <span
+                >Rp
+                {{ new Intl.NumberFormat("id-ID").format(totalPrice) }}</span
+              >
             </div>
             <div
               class="flex justify-between items-center text-zinc-400 uppercase tracking-widest text-xs font-bold"
@@ -348,7 +355,7 @@ const goToWhatsApp = () => {
             <div class="flex justify-between items-end">
               <span class="text-zinc-500 font-medium">Total Amount</span>
               <span class="text-5xl font-bold text-zinc-950 tracking-tighter">
-                Rp {{ new Intl.NumberFormat('id-ID').format(totalPrice) }}
+                Rp {{ new Intl.NumberFormat("id-ID").format(totalPrice) }}
               </span>
             </div>
           </div>

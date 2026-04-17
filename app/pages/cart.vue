@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { popularProducts } from "../data/products";
-
 const cartStore = useCartStore();
 const { getProducts, checkoutOrder } = useApi();
 const { data: allProducts } = await useAsyncData("products-cart", () =>
@@ -10,26 +8,9 @@ const { data: allProducts } = await useAsyncData("products-cart", () =>
 const cartItems = computed(() => {
   return cartStore.items
     .map((item) => {
-      let productData = allProducts.value?.find(
+      const productData = allProducts.value?.find(
         (p) => p.id === item.product_id,
       );
-      if (!productData) {
-        const mockProduct = popularProducts.find(
-          (p) => p.id === item.product_id,
-        );
-        if (mockProduct) {
-          productData = {
-            id: mockProduct.id,
-            name: mockProduct.name,
-            price: mockProduct.price,
-            stock: 99,
-            image_url: mockProduct.img,
-            is_active: true,
-            slug: mockProduct.slug,
-          } as any;
-        }
-      }
-
       return {
         ...item,
         product: productData,

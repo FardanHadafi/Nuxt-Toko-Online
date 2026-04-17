@@ -77,7 +77,7 @@ const handleNavClick = (e, path) => {
           </div>
           <span
             v-if="cartStore.totalItems > 0"
-            class="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 bg-black text-white text-[10px] font-bold px-1.5 rounded-full flex items-center justify-center border-2 border-white shadow-sm"
+            class="absolute -top-0.5 -right-0.5 min-w-5 h-5 bg-black text-white text-[10px] font-bold px-1.5 rounded-full flex items-center justify-center border-2 border-white shadow-sm"
           >
             {{ cartStore.totalItems }}
           </span>

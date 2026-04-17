@@ -118,12 +118,13 @@ const selectImage = (img: string) => {
         <div class="grid grid-cols-1 md:grid-cols-12 gap-12">
           <div class="md:col-span-7 product-gallery">
             <div
-              class="bg-white p-12 flex justify-center items-center h-[600px] overflow-hidden shadow-sm"
+              class="bg-white p-6 sm:p-12 flex justify-center items-center h-[400px] md:h-[600px] overflow-hidden shadow-sm border border-gray-50"
             >
               <img
+                v-if="activeImage"
                 :src="activeImage"
                 :alt="product.name"
-                class="w-full h-full object-contain transition-all duration-700 transform hover:scale-105"
+                class="w-full h-full object-contain transition-all duration-700 transform sm:hover:scale-105"
               />
             </div>
             <div
@@ -145,23 +146,23 @@ const selectImage = (img: string) => {
               </button>
             </div>
           </div>
-          <div class="md:col-span-5 flex flex-col product-info">
+          <div class="md:col-span-5 flex flex-col product-info pt-8 md:pt-0">
             <span
-              class="text-xs uppercase tracking-widest text-orange-500 font-bold mb-4"
+              class="text-[10px] uppercase tracking-[0.2em] text-orange-500 font-bold mb-4"
             >
-              {{ product.category_display }}
+              {{ product.category_display }} Selection
             </span>
-            <h1 class="text-5xl font-light text-gray-900 leading-tight mb-6">
+            <h1 class="text-3xl md:text-5xl font-light text-gray-900 leading-tight mb-6 italic">
               {{ product.name }}
             </h1>
             <div class="flex items-center gap-4 mb-8">
-              <span class="text-3xl font-medium text-gray-900"
+              <span class="text-2xl md:text-3xl font-bold text-gray-900"
                 >Rp
                 {{ new Intl.NumberFormat("id-ID").format(product.price) }}</span
               >
               <span
                 v-if="product.inStock"
-                class="bg-green-100 text-green-700 text-xs px-2 py-1 font-semibold uppercase tracking-wider"
+                class="bg-green-100 text-green-700 text-[9px] px-2 py-1 font-bold uppercase tracking-widest shadow-sm"
               >
                 In Stock
               </span>

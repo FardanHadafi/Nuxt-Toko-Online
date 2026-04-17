@@ -174,7 +174,9 @@ const handleDelete = async (id: string) => {
       class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-8 admin-header"
     >
       <div>
-        <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+        <h1
+          class="text-3xl md:text-5xl font-light text-gray-900 tracking-tight italic"
+        >
           Product <span class="font-bold not-italic">Inventory</span>
         </h1>
         <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">
@@ -379,8 +381,9 @@ const handleDelete = async (id: string) => {
                 >Product Master Visual & Gallery</label
               >
               <div class="space-y-6">
-                <!-- Master Image -->
-                <div class="flex items-center gap-8 bg-gray-50/50 p-4 border border-gray-100">
+                <div
+                  class="flex items-center gap-8 bg-gray-50/50 p-4 border border-gray-100"
+                >
                   <div
                     class="w-32 h-32 bg-white flex items-center justify-center border border-gray-100 p-2 overflow-hidden shrink-0 shadow-sm"
                   >
@@ -424,14 +427,29 @@ const handleDelete = async (id: string) => {
                     </div>
                   </div>
                 </div>
-
-                <!-- Gallery Grid -->
                 <div class="grid grid-cols-5 gap-4">
-                  <div v-for="(url, index) in form.images" :key="index" class="relative group aspect-square bg-gray-50 border border-gray-100 overflow-hidden">
-                    <img v-if="url" :src="url" class="absolute inset-0 w-full h-full object-contain p-2" />
-                    <div v-else class="absolute inset-0 flex flex-col items-center justify-center gap-2">
-                       <Icon name="uil:plus-circle" class="text-gray-200 text-xl" />
-                       <span class="text-[8px] font-bold text-gray-400 uppercase tracking-tighter">Angle {{ index + 1 }}</span>
+                  <div
+                    v-for="(url, index) in form.images"
+                    :key="index"
+                    class="relative group aspect-square bg-gray-50 border border-gray-100 overflow-hidden"
+                  >
+                    <img
+                      v-if="url"
+                      :src="url"
+                      class="absolute inset-0 w-full h-full object-contain p-2"
+                    />
+                    <div
+                      v-else
+                      class="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                    >
+                      <Icon
+                        name="uil:plus-circle"
+                        class="text-gray-200 text-xl"
+                      />
+                      <span
+                        class="text-[8px] font-bold text-gray-400 uppercase tracking-tighter"
+                        >Angle {{ index + 1 }}</span
+                      >
                     </div>
                     <input
                       type="file"
@@ -440,12 +458,18 @@ const handleDelete = async (id: string) => {
                       :disabled="uploadingImage"
                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     />
-                    <div v-if="url" class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                       <Icon name="uil:sync" class="text-white text-xl" />
+                    <div
+                      v-if="url"
+                      class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                    >
+                      <Icon name="uil:sync" class="text-white text-xl" />
                     </div>
                   </div>
                 </div>
-                <p class="text-[9px] text-gray-400 italic">Upload up to 5 additional angles for the product gallery. Master image is required.</p>
+                <p class="text-[9px] text-gray-400 italic">
+                  Upload up to 5 additional angles for the product gallery.
+                  Master image is required.
+                </p>
               </div>
             </div>
             <div class="space-y-2">

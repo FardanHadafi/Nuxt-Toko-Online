@@ -150,7 +150,7 @@ const handleCancel = async (id: string) => {
       class="flex flex-col lg:flex-row gap-8 justify-between items-start admin-header"
     >
       <div>
-        <h1 class="text-5xl font-light text-gray-900 tracking-tight italic">
+        <h1 class="text-3xl md:text-5xl font-light text-gray-900 tracking-tight italic">
           Order <span class="font-bold not-italic">Ledger</span>
         </h1>
         <p class="text-gray-400 mt-2 tracking-wide uppercase text-xs font-bold">

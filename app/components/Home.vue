@@ -113,29 +113,29 @@ onMounted(async () => {
   <div>
     <main
       id="home"
-      class="min-h-screen bg-gray-100 pt-48 flex flex-col items-center pb-24"
+      class="min-h-screen bg-gray-100 pt-32 md:pt-48 flex flex-col items-center pb-24"
     >
       <div class="text-center max-w-xl px-4 hero-content">
-        <h1 class="font-light text-6xl leading-tight tracking-tight">
+        <h1 class="font-light text-4xl md:text-6xl leading-tight tracking-tight">
           Uncover
           <span class="text-orange-500">The Most</span> Innovative Products.
         </h1>
-        <p class="mt-4 text-gray-500 text-lg leading-relaxed">
+        <p class="mt-4 text-gray-400 text-base md:text-lg leading-relaxed">
           Exploring the tech and design shaping the world of tomorrow
         </p>
       </div>
-      <div id="categories" class="w-full max-w-360 px-4 mt-24">
-        <div class="grid grid-cols-2 gap-4">
+      <div id="categories" class="w-full max-w-360 px-4 mt-20 md:mt-24">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <NuxtLink
             v-for="product in dynamicCategoryGrid"
             :key="product.slug"
             :to="`/category/${product.slug}`"
-            class="group cursor-pointer bg-white product-grid-item block"
+            class="group cursor-pointer bg-white product-grid-item block shadow-sm"
           >
-            <div class="overflow-hidden bg-[#f0f0f0]">
+            <div class="overflow-hidden bg-gray-100 relative pt-[75%]">
               <img
                 :src="product.img"
-                class="w-full aspect-4/3 object-cover transition-transform duration-500 group-hover:scale-105"
+                class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
               />
             </div>
             <div
@@ -157,28 +157,28 @@ onMounted(async () => {
       </div>
       <div
         id="products"
-        class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center popular-header"
+        class="text-center max-w-2xl px-4 mt-32 md:mt-48 flex flex-col items-center popular-header"
       >
         <span
-          class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
+          class="inline-block bg-white px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest shadow-sm mb-6"
         >
-          Popular Products
+          Popular Selection
         </span>
-        <h1 class="font-light text-6xl leading-tight tracking-tight">
-          Check Out The
-          <span class="text-orange-500">Most Popular</span> Pieces.
+        <h1 class="font-light text-3xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
+          Check Out Our
+          <span class="text-orange-500">Most Loved</span> Pieces.
         </h1>
-        <p class="mt-4 text-gray-500 text-lg leading-relaxed">
-          Exploring the tech and design shaping the world of tomorrow.
+        <p class="mt-4 text-gray-400 text-base md:text-lg leading-relaxed">
+          Curated tech and lifestyle essentials for the modern pioneer.
         </p>
-        <div class="flex items-center gap-2 mt-24">
+        <div class="flex items-center justify-center flex-wrap gap-2 mt-12 md:mt-24">
           <button
             @click="activeFilter = 'All Items'"
             :class="[
-              'flex items-center gap-2 px-4 py-2 text-sm font-medium transition-colors bg-white',
+              'flex items-center gap-2 px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all bg-white shadow-sm',
               activeFilter === 'All Items'
                 ? 'text-orange-500 border border-orange-500'
-                : 'text-gray-700 border border-transparent hover:text-orange-500',
+                : 'text-gray-400 border border-transparent hover:text-orange-500',
             ]"
           >
             <svg
@@ -254,53 +254,53 @@ onMounted(async () => {
           </button>
         </div>
       </div>
-      <div class="w-full max-w-280 px-4 mt-6 popular-cards-container">
-        <div class="grid grid-cols-3 gap-2">
+      <div class="w-full max-w-280 px-4 mt-10 popular-cards-container">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-2">
           <NuxtLink
             v-for="product in filteredProducts"
             :key="product.id"
             :to="`/products/${product.slug}`"
-            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer popular-card shadow-sm hover:shadow-md transition-shadow"
+            class="bg-white p-6 sm:p-8 relative flex flex-col justify-between group cursor-pointer popular-card shadow-sm hover:shadow-xl transition-all duration-500"
           >
             <div class="absolute top-6 left-6 flex flex-col gap-2 z-10">
               <div
                 v-if="product.new"
-                class="bg-[#FF5A00] text-white text-[10px] uppercase tracking-widest font-bold px-2 py-1"
+                class="bg-[#FF5A00] text-white text-[9px] uppercase tracking-[0.2em] font-bold px-2 py-1 shadow-lg"
               >
                 New
               </div>
             </div>
             <button
               @click.stop.prevent="useCartStore().addItem(product.id, 1)"
-              class="absolute top-6 right-6 w-10 h-10 bg-zinc-900 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 z-20 hover:bg-orange-600"
+              class="absolute top-6 right-6 w-10 h-10 bg-black text-white rounded-full flex items-center justify-center opacity-0 sm:group-hover:opacity-100 transition-all duration-300 transform translate-y-2 sm:group-hover:translate-y-0 z-20 hover:bg-orange-600 shadow-xl"
               title="Add to Cart"
             >
               <Icon name="uil:plus" class="text-xl" />
             </button>
             <div
-              class="h-64 flex justify-center items-center overflow-hidden mb-8"
+              class="h-64 sm:h-72 flex justify-center items-center overflow-hidden mb-10"
             >
               <img
                 :src="product.img"
-                class="object-contain transition-transform duration-500 group-hover:scale-105 h-full w-full"
+                class="object-contain transition-transform duration-700 group-hover:scale-110 h-full w-full p-4"
               />
             </div>
 
             <!-- Info -->
-            <div class="mt-auto flex justify-between items-end">
+            <div class="mt-auto pt-6 border-t border-gray-50 flex justify-between items-end">
               <div>
-                <h3 class="text-base font-medium text-gray-900 line-clamp-1">
+                <h3 class="text-base font-bold text-gray-900 line-clamp-1 italic">
                   {{ product.name }}
                 </h3>
                 <p
-                  class="text-xs text-gray-400 mt-1 uppercase tracking-widest font-bold"
+                  class="text-[10px] text-gray-400 mt-1 uppercase tracking-widest font-bold"
                   v-if="product.inStock"
                 >
-                  In Stock
+                  Authentic Selection
                 </p>
               </div>
               <div class="shrink-0">
-                <p class="text-sm font-bold text-gray-950">
+                <p class="text-sm font-bold text-gray-900">
                   Rp {{ new Intl.NumberFormat("id-ID").format(product.price) }}
                 </p>
               </div>
@@ -310,18 +310,18 @@ onMounted(async () => {
       </div>
       <div
         id="about"
-        class="text-center max-w-2xl px-4 mt-48 flex flex-col items-center about-text"
+        class="text-center max-w-2xl px-4 mt-32 md:mt-48 flex flex-col items-center about-text"
       >
         <span
-          class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
+          class="inline-block bg-white px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest shadow-sm mb-6"
         >
-          About Us
+          Our Core
         </span>
-        <h1 class="font-light text-6xl leading-tight tracking-tight">
-          Learn More <span class="text-orange-500">About Us</span>
+        <h1 class="font-light text-3xl md:text-5xl lg:text-6xl leading-tight tracking-tight">
+          Learn More <span class="text-orange-500">About Our Vision</span>
         </h1>
-        <p class="mt-4 text-gray-500 text-lg leading-relaxed">
-          Discover our story, values, and what we stand for.
+        <p class="mt-4 text-gray-400 text-base md:text-lg leading-relaxed">
+          Crafting the future of retail through curated excellence.
         </p>
       </div>
 

@@ -83,15 +83,15 @@ onMounted(() => {
 <template>
   <div>
     <main
-      class="min-h-screen bg-gray-100 pt-60 pb-32 flex flex-col items-center"
+      class="min-h-screen bg-gray-100 pt-32 md:pt-48 pb-32 flex flex-col items-center"
     >
       <div class="text-center max-w-2xl px-4 category-title">
         <span
-          class="inline-block bg-white px-3 py-1 text-sm text-gray-500 font-medium tracking-wide shadow-sm mb-4"
+          class="inline-block bg-white px-3 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest shadow-sm mb-6"
         >
-          {{ categoryTitle }} Category
+          {{ categoryTitle }} Collection
         </span>
-        <h1 class="font-light text-6xl leading-tight tracking-tight">
+        <h1 class="font-light text-4xl md:text-6xl leading-tight tracking-tight">
           <span class="text-orange-500 capitalize">{{
             categorySlug === "outdoor" ? "Outdoors" : categoryTitle
           }}</span>
@@ -100,44 +100,43 @@ onMounted(() => {
           Gear designed for movement, nature, and adventure.
         </p>
       </div>
-      <div class="w-full max-w-280 px-4 mt-24 category-grid">
+      <div class="w-full max-w-280 px-4 mt-16 md:mt-24 category-grid">
         <div
           v-if="categoryProducts.length > 0"
-          class="grid grid-cols-1 md:grid-cols-3 gap-2"
+          class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2"
         >
           <NuxtLink
             v-for="product in categoryProducts"
             :key="product.name"
             :to="`/products/${product.slug}`"
-            class="bg-white p-8 relative flex flex-col justify-between group cursor-pointer category-card"
+            class="bg-white p-6 sm:p-8 relative flex flex-col justify-between group cursor-pointer category-card shadow-sm hover:shadow-xl transition-all duration-500"
           >
             <div
               v-if="product.new"
-              class="absolute top-6 left-6 bg-[#FF5A00] text-white text-xs font-semibold px-2 py-1 z-10"
+              class="absolute top-6 left-6 bg-[#FF5A00] text-white text-[9px] font-bold uppercase tracking-widest px-2 py-1 z-10 shadow-lg"
             >
-              New
+              New Arrival
             </div>
             <div
-              class="h-64 flex justify-center items-center overflow-hidden mb-8"
+              class="h-64 sm:h-72 flex justify-center items-center overflow-hidden mb-8"
             >
               <img
                 :src="product.img"
-                class="w-full h-full object-contain transition-transform duration-500 group-hover:scale-105"
+                class="w-full h-full object-contain transition-transform duration-700 group-hover:scale-110 p-4"
               />
             </div>
-            <div class="mt-auto flex justify-between items-end">
+            <div class="mt-auto pt-6 border-t border-gray-50 flex justify-between items-end">
               <div>
-                <h3 class="text-base font-medium text-gray-900">
+                <h3 class="text-base font-bold text-gray-900 italic">
                   {{ product.name }}
                 </h3>
                 <p class="text-sm text-gray-400 mt-1" v-if="product.inStock">
                   In Stock
                 </p>
               </div>
-              <div>
-                <p class="text-sm font-medium text-gray-500">
-                  Rp
-                  {{ new Intl.NumberFormat("id-ID").format(product.price) }}
+              <div class="shrink-0">
+                <p class="text-sm font-bold text-gray-900">
+                  Rp {{ new Intl.NumberFormat("id-ID").format(product.price) }}
                 </p>
               </div>
             </div>

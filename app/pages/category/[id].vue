@@ -136,7 +136,8 @@ onMounted(() => {
               </div>
               <div>
                 <p class="text-sm font-medium text-gray-500">
-                  ${{ product.price }}
+                  Rp
+                  {{ new Intl.NumberFormat("id-ID").format(product.price) }}
                 </p>
               </div>
             </div>

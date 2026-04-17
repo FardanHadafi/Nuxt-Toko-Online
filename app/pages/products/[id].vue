@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watchEffect } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -8,21 +8,23 @@ const { getProducts } = useApi();
 const route = useRoute();
 const router = useRouter();
 const cartStore = useCartStore();
-const productId = route.params.id as string;
 const apiProduct = ref<any>(null);
-
-onMounted(async () => {
+const fetchProduct = async () => {
   try {
     const products = await getProducts();
-    const found = products.find((p: any) => p.slug === productId);
+    const found = products.find((p: any) => p.slug === productId.value);
     if (found) {
+      const rawGallery =
+        found.images && found.images.length > 0
+          ? found.images
+          : [found.image_url];
+      // Deduplicate gallery URLs
+      const uniqueGallery = [...new Set(rawGallery)];
+
       apiProduct.value = {
         ...found,
         img: found.image_url,
-        gallery:
-          found.images && found.images.length > 0
-            ? found.images
-            : [found.image_url],
+        gallery: uniqueGallery,
         inStock: found.stock > 0,
         price: Number(found.price),
         category: found.category_slug || found.category?.slug || "general",
@@ -34,6 +36,14 @@ onMounted(async () => {
   } catch (error) {
     console.error("Failed to fetch product:", error);
   }
+};
+
+const productId = computed(() => route.params.id as string);
+
+onMounted(fetchProduct);
+
+watch(productId, () => {
+  fetchProduct();
 });
 
 const product = computed(() => {
@@ -41,11 +51,6 @@ const product = computed(() => {
 });
 
 const activeImage = ref("");
-watchEffect(() => {
-  if (product.value && !apiProduct.value) {
-    activeImage.value = product.value.img;
-  }
-});
 
 const isAdding = ref(false);
 

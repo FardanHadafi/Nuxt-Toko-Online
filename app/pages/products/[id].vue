@@ -18,7 +18,6 @@ const fetchProduct = async () => {
         found.images && found.images.length > 0
           ? found.images
           : [found.image_url];
-      // Deduplicate gallery URLs
       const uniqueGallery = [...new Set(rawGallery)];
 
       apiProduct.value = {
@@ -51,7 +50,6 @@ const product = computed(() => {
 });
 
 const activeImage = ref("");
-
 const isAdding = ref(false);
 
 const addToCart = () => {
